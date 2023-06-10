@@ -5,13 +5,18 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
 
 class MyView(context: Context?) : View(context, null) {
 
     private var drawCubeVertices //the vertices for drawing a 3D cube
-            : Array<Coordinate?>
+            : Array<Coordinate?> = arrayOfNulls(0)
 
     private val cubeVertices //the vertices of a 3D cube
             : Array<Coordinate?>
@@ -36,13 +41,47 @@ class MyView(context: Context?) : View(context, null) {
         cubeVertices[5] = Coordinate(1.0, -1.0, 1.0, 1.0)
         cubeVertices[6] = Coordinate(1.0, 1.0, -1.0, 1.0)
         cubeVertices[7] = Coordinate(1.0, 1.0, 1.0, 1.0)
-        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, 2.0)
-        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
+//        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, 2.0)
+//        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
+
 //        drawCubeVertices = rotate(drawCubeVertices, null, 45.0, null)
 //        drawCubeVertices = rotate(drawCubeVertices, 45.0, null, null)
 //        drawCubeVertices = rotate(drawCubeVertices, null, null, 80.0)
 //        drawCubeVertices = rotate(drawCubeVertices, null, 30.0, null)
-        thisView.invalidate() //update the view
+
+//        thisView.invalidate() //update the view
+
+        var temp = arrayOfNulls<Coordinate?>(0)
+        var angle = 45.0
+        val frameTime = 1000L / 120L
+        val degreePerFrame = 50.0 / 1000 * frameTime
+        var isCalculating = false
+        CoroutineScope(Dispatchers.Default).launch {
+            do {
+                delay(frameTime)
+
+                isCalculating = true
+                temp = translate(cubeVertices, 2.0, 2.0, 2.0)
+                temp = scale(temp, 40.0, 40.0, 40.0)
+
+                temp = quaternionRotate(temp, intArrayOf(0, 1, 1), angle)
+
+                temp = translate(temp, 200.0, 200.0, 0.0)
+                isCalculating = false
+
+                angle += degreePerFrame
+                angle = if (angle >= 360) 0.0 else angle
+            } while (true)
+        }
+        CoroutineScope((Dispatchers.Default)).launch {
+            while (true) {
+                delay(frameTime)
+                if (isCalculating.not()) {
+                    drawCubeVertices = temp
+                    thisView.invalidate() //update the view
+                }
+            }
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -96,11 +135,14 @@ class MyView(context: Context?) : View(context, null) {
         // vertex - vector in 3D
         // matrix - transformation matrix
         val result = Coordinate()
-        result.x = matrix[0] * vertex!!.x + matrix[1] * vertex.y + matrix[2] * vertex.z + matrix[3]
-        result.y = matrix[4] * vertex.x + matrix[5] * vertex.y + matrix[6] * vertex.z + matrix[7]
-        result.z = matrix[8] * vertex.x + matrix[9] * vertex.y + matrix[10] * vertex.z + matrix[11]
+        result.x =
+            matrix[0] * vertex!!.x + matrix[1] * vertex.y + matrix[2] * vertex.z + matrix[3] * vertex.w
+        result.y =
+            matrix[4] * vertex.x + matrix[5] * vertex.y + matrix[6] * vertex.z + matrix[7] * vertex.w
+        result.z =
+            matrix[8] * vertex.x + matrix[9] * vertex.y + matrix[10] * vertex.z + matrix[11] * vertex.w
         result.w =
-            matrix[12] * vertex.x + matrix[13] * vertex.y + matrix[14] * vertex.z + matrix[15]
+            matrix[12] * vertex.x + matrix[13] * vertex.y + matrix[14] * vertex.z + matrix[15] * vertex.w
         return result
     }
 
@@ -133,7 +175,7 @@ class MyView(context: Context?) : View(context, null) {
         rx?.let {
             rotateMatrix = getIdentityMatrix()
             rotateRadians = Math.toRadians(it)
-            rotateMatrix[5]= cos(rotateRadians)
+            rotateMatrix[5] = cos(rotateRadians)
             rotateMatrix[6] = -sin(rotateRadians)
             rotateMatrix[9] = sin(rotateRadians)
             rotateMatrix[10] = cos(rotateRadians)
@@ -142,7 +184,7 @@ class MyView(context: Context?) : View(context, null) {
         ry?.let {
             rotateMatrix = getIdentityMatrix()
             rotateRadians = Math.toRadians(it)
-            rotateMatrix[0]= cos(rotateRadians)
+            rotateMatrix[0] = cos(rotateRadians)
             rotateMatrix[2] = sin(rotateRadians)
             rotateMatrix[8] = -sin(rotateRadians)
             rotateMatrix[10] = cos(rotateRadians)
@@ -151,13 +193,66 @@ class MyView(context: Context?) : View(context, null) {
         rz?.let {
             rotateMatrix = getIdentityMatrix()
             rotateRadians = Math.toRadians(it)
-            rotateMatrix[0]= cos(rotateRadians)
+            rotateMatrix[0] = cos(rotateRadians)
             rotateMatrix[1] = -sin(rotateRadians)
             rotateMatrix[4] = sin(rotateRadians)
             rotateMatrix[5] = cos(rotateRadians)
             result = transformation(result, rotateMatrix)
         }
         return result
+    }
+
+    fun quaternionRotate(
+        vertices: Array<Coordinate?>,
+        rotateAxis: IntArray,
+        rotateDegree: Double
+    ): Array<Coordinate?> {
+        val result = arrayOfNulls<Coordinate>(vertices.size)
+
+        vertices.forEachIndexed { index, coordinate ->
+            coordinate?.let {
+                result[index] = quaternionCalculate(it, rotateAxis, rotateDegree)
+            }
+        }
+
+        return result
+    }
+
+    fun quaternionCalculate(
+        vertex: Coordinate,
+        rotateAxis: IntArray,
+        rotateDegree: Double
+    ): Coordinate {
+        val (cos, sin) = (Math.toRadians(rotateDegree) / 2).let {
+            cos(it) to sin(it)
+        }
+        var m: DoubleArray
+        Coordinate(
+            w = cos,
+            x = sin * rotateAxis[0],
+            y = sin * rotateAxis[1],
+            z = sin * rotateAxis[2],
+        ).apply {
+            m = doubleArrayOf(
+                w.pow(2) + x.pow(2) - y.pow(2) - z.pow(2),
+                2 * x * y - 2 * w * z,
+                2 * x * z + 2 * w * y,
+                0.0,
+                2 * x * y + 2 * w * z,
+                w.pow(2) + y.pow(2) - x.pow(2) - z.pow(2),
+                2 * y * z - 2 * w * x,
+                0.0,
+                2 * x * z - 2 * w * y,
+                2 * y * z + 2 * w * x,
+                w.pow(2) + z.pow(2) - x.pow(2) - y.pow(2),
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            )
+        }
+        return transformation(vertex, m)
     }
 
     private fun drawCube(canvas: Canvas) { //draw a cube on the screen
