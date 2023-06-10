@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MyView(context: Context?) : View(context, null) {
 
@@ -36,6 +38,10 @@ class MyView(context: Context?) : View(context, null) {
         cubeVertices[7] = Coordinate(1.0, 1.0, 1.0, 1.0)
         drawCubeVertices = translate(cubeVertices, 2.0, 2.0, 2.0)
         drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
+//        drawCubeVertices = rotate(drawCubeVertices, null, 45.0, null)
+//        drawCubeVertices = rotate(drawCubeVertices, 45.0, null, null)
+//        drawCubeVertices = rotate(drawCubeVertices, null, null, 80.0)
+//        drawCubeVertices = rotate(drawCubeVertices, null, 30.0, null)
         thisView.invalidate() //update the view
     }
 
@@ -99,7 +105,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //***********************************************************
-//Affine transformation
+    // Affine transformation
     fun translate(
         vertices: Array<Coordinate?>,
         tx: Double,
@@ -111,6 +117,47 @@ class MyView(context: Context?) : View(context, null) {
         matrix[7] = ty
         matrix[11] = tz
         return transformation(vertices, matrix)
+    }
+
+    //***********************************************************
+    // Affine rotation
+    fun rotate(
+        vertices: Array<Coordinate?>,
+        rx: Double? = null,
+        ry: Double? = null,
+        rz: Double? = null
+    ): Array<Coordinate?> {
+        var result = vertices
+        var rotateMatrix: DoubleArray
+        var rotateRadians: Double
+        rx?.let {
+            rotateMatrix = getIdentityMatrix()
+            rotateRadians = Math.toRadians(it)
+            rotateMatrix[5]= cos(rotateRadians)
+            rotateMatrix[6] = -sin(rotateRadians)
+            rotateMatrix[9] = sin(rotateRadians)
+            rotateMatrix[10] = cos(rotateRadians)
+            result = transformation(result, rotateMatrix)
+        }
+        ry?.let {
+            rotateMatrix = getIdentityMatrix()
+            rotateRadians = Math.toRadians(it)
+            rotateMatrix[0]= cos(rotateRadians)
+            rotateMatrix[2] = sin(rotateRadians)
+            rotateMatrix[8] = -sin(rotateRadians)
+            rotateMatrix[10] = cos(rotateRadians)
+            result = transformation(result, rotateMatrix)
+        }
+        rz?.let {
+            rotateMatrix = getIdentityMatrix()
+            rotateRadians = Math.toRadians(it)
+            rotateMatrix[0]= cos(rotateRadians)
+            rotateMatrix[1] = -sin(rotateRadians)
+            rotateMatrix[4] = sin(rotateRadians)
+            rotateMatrix[5] = cos(rotateRadians)
+            result = transformation(result, rotateMatrix)
+        }
+        return result
     }
 
     private fun drawCube(canvas: Canvas) { //draw a cube on the screen
