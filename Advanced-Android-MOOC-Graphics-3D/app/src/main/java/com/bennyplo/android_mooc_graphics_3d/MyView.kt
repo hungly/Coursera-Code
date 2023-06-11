@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.tan
 
 class MyView(context: Context?) : View(context, null) {
 
@@ -51,37 +52,47 @@ class MyView(context: Context?) : View(context, null) {
 
 //        thisView.invalidate() //update the view
 
-        var temp = arrayOfNulls<Coordinate?>(0)
-        var angle = 45.0
-        val frameTime = 1000L / 120L
-        val degreePerFrame = 50.0 / 1000 * frameTime
-        var isCalculating = false
-        CoroutineScope(Dispatchers.Default).launch {
-            do {
-                delay(frameTime)
+//        var temp = arrayOfNulls<Coordinate?>(0)
+//        var angle = 45.0
+//        val frameTime = 1000L / 120L
+//        val degreePerFrame = 50.0 / 1000 * frameTime
+//        var isCalculating = false
+//        CoroutineScope(Dispatchers.Default).launch {
+//            do {
+//                delay(frameTime)
+//
+//                isCalculating = true
+//                temp = translate(cubeVertices, 2.0, 2.0, 2.0)
+//                temp = scale(temp, 40.0, 40.0, 40.0)
+//
+//                temp = quaternionRotate(temp, intArrayOf(0, 1, 1), angle)
+//
+//                temp = translate(temp, 200.0, 200.0, 0.0)
+//                isCalculating = false
+//
+//                angle += degreePerFrame
+//                angle = if (angle >= 360) 0.0 else angle
+//            } while (true)
+//        }
+//        CoroutineScope((Dispatchers.Default)).launch {
+//            while (true) {
+//                delay(frameTime)
+//                if (isCalculating.not()) {
+//                    drawCubeVertices = temp
+//                    thisView.invalidate() //update the view
+//                }
+//            }
+//        }
 
-                isCalculating = true
-                temp = translate(cubeVertices, 2.0, 2.0, 2.0)
-                temp = scale(temp, 40.0, 40.0, 40.0)
-
-                temp = quaternionRotate(temp, intArrayOf(0, 1, 1), angle)
-
-                temp = translate(temp, 200.0, 200.0, 0.0)
-                isCalculating = false
-
-                angle += degreePerFrame
-                angle = if (angle >= 360) 0.0 else angle
-            } while (true)
-        }
-        CoroutineScope((Dispatchers.Default)).launch {
-            while (true) {
-                delay(frameTime)
-                if (isCalculating.not()) {
-                    drawCubeVertices = temp
-                    thisView.invalidate() //update the view
-                }
-            }
-        }
+        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, -2.0)
+        drawCubeVertices = perspectiveProjection(
+            drawCubeVertices,
+            100.0,
+            doubleArrayOf(-1.0, -1.0, 1.0, 1.0, 1.0, 1.1)
+        )
+        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
+        drawCubeVertices = translate(drawCubeVertices, 200.0, 200.0, 0.0)
+        thisView.invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -91,7 +102,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //*********************************
-//matrix and transformation functions
+    // Matrix and transformation functions
     fun getIdentityMatrix(): DoubleArray { //return an 4x4 identity matrix
         val matrix = DoubleArray(16)
         matrix[0] = 1.0
@@ -202,6 +213,8 @@ class MyView(context: Context?) : View(context, null) {
         return result
     }
 
+    //***********************************************************
+    // Quaternion rotation
     fun quaternionRotate(
         vertices: Array<Coordinate?>,
         rotateAxis: IntArray,
@@ -253,6 +266,37 @@ class MyView(context: Context?) : View(context, null) {
             )
         }
         return transformation(vertex, m)
+    }
+
+    //***********************************************************
+    // Perspective projection
+    fun perspectiveProjection(
+        vertices: Array<Coordinate?>,
+        fovInDegree: Double,
+        plane: DoubleArray
+    ): Array<Coordinate?> {
+        val aspectRatio = (plane[2] - plane[0]) / (plane[1] - plane[3])
+        val tanA = tan(Math.toRadians(fovInDegree) / 2)
+        val m = doubleArrayOf(
+            1 / (aspectRatio * tanA),
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1 / tanA,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -(plane[5] + plane[4]) / (plane[5] - plane[4]),
+            -(2 * plane[5] * plane[4]) / (plane[5] - plane[4]),
+            0.0,
+            0.0,
+            -1.0,
+            0.0
+        )
+
+        return transformation(vertices, m)
     }
 
     private fun drawCube(canvas: Canvas) { //draw a cube on the screen
