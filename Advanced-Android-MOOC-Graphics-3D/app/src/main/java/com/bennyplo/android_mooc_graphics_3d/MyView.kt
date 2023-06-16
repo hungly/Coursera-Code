@@ -7,8 +7,10 @@ import android.graphics.Paint
 import android.view.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -16,94 +18,194 @@ import kotlin.math.tan
 
 class MyView(context: Context?) : View(context, null) {
 
-    private var drawCubeVertices //the vertices for drawing a 3D cube
-            : Array<Coordinate?> = arrayOfNulls(0)
+    private val cubeVertices: Array<Coordinate?> by lazy {
+        arrayOf(
+            Coordinate(-1.0, -1.0, -1.0, 1.0),
+            Coordinate(-1.0, -1.0, 1.0, 1.0),
+            Coordinate(-1.0, 1.0, -1.0, 1.0),
+            Coordinate(-1.0, 1.0, 1.0, 1.0),
+            Coordinate(1.0, -1.0, -1.0, 1.0),
+            Coordinate(1.0, -1.0, 1.0, 1.0),
+            Coordinate(1.0, 1.0, -1.0, 1.0),
+            Coordinate(1.0, 1.0, 1.0, 1.0),
+        )
+    }
 
-    private val cubeVertices //the vertices of a 3D cube
-            : Array<Coordinate?>
+    private val headVertices: Array<Coordinate?> by lazy {
+        scale(cubeVertices, 90.0, 90.0, 90.0)
+    }
 
-    private val redPaint //paint object for drawing the lines
-            : Paint
+    private val neckVertices: Array<Coordinate?> by lazy {
+        scale(cubeVertices, 45.0, 20.0, 45.0)
+    }
+
+    private val headPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.BLACK
+            strokeWidth = 2f
+        }
+    }
+
+    private val neckPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.BLUE
+            strokeWidth = 2f
+        }
+    }
+
+    private val chestPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.CYAN
+            strokeWidth = 2f
+        }
+    }
+
+    private val hipPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.DKGRAY
+            strokeWidth = 2f
+        }
+    }
+
+    private val uArmPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.GRAY
+            strokeWidth = 2f
+        }
+    }
+
+    private val lArmPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.GREEN
+            strokeWidth = 2f
+        }
+    }
+
+    private val handPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.LTGRAY
+            strokeWidth = 2f
+        }
+    }
+
+    private val uLegPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.MAGENTA
+            strokeWidth = 2f
+        }
+    }
+
+    private val lLegPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.RED
+            strokeWidth = 2f
+        }
+    }
+
+    private val footPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.YELLOW
+            strokeWidth = 2f
+        }
+    }
+
+    private val paints = arrayOf(
+        headPaint,
+        neckPaint,
+        chestPaint,
+        hipPaint,
+        uArmPaint,
+        lArmPaint,
+        handPaint,
+        uArmPaint,
+        lArmPaint,
+        handPaint,
+        uLegPaint,
+        lLegPaint,
+        footPaint,
+        uLegPaint,
+        lLegPaint,
+        footPaint,
+    )
+
+    private val baseAndroid by lazy {
+        arrayOf(
+            headVertices.map { it?.copy() }.toTypedArray(),
+            neckVertices.map { it?.copy() }.toTypedArray()
+        )
+    }
+
+    private val drawAndroid = baseAndroid
 
     init {
-        val thisView = this
-        //create the paint object
-        redPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        redPaint.style = Paint.Style.STROKE //Stroke
-        redPaint.color = Color.RED
-        redPaint.strokeWidth = 2f
-        //create a 3D cube
-        cubeVertices = arrayOfNulls(8)
-        cubeVertices[0] = Coordinate(-1.0, -1.0, -1.0, 1.0)
-        cubeVertices[1] = Coordinate(-1.0, -1.0, 1.0, 1.0)
-        cubeVertices[2] = Coordinate(-1.0, 1.0, -1.0, 1.0)
-        cubeVertices[3] = Coordinate(-1.0, 1.0, 1.0, 1.0)
-        cubeVertices[4] = Coordinate(1.0, -1.0, -1.0, 1.0)
-        cubeVertices[5] = Coordinate(1.0, -1.0, 1.0, 1.0)
-        cubeVertices[6] = Coordinate(1.0, 1.0, -1.0, 1.0)
-        cubeVertices[7] = Coordinate(1.0, 1.0, 1.0, 1.0)
-//        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, 2.0)
-//        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
-
-//        drawCubeVertices = rotate(drawCubeVertices, null, 45.0, null)
-//        drawCubeVertices = rotate(drawCubeVertices, 45.0, null, null)
-//        drawCubeVertices = rotate(drawCubeVertices, null, null, 80.0)
-//        drawCubeVertices = rotate(drawCubeVertices, null, 30.0, null)
-
-//        thisView.invalidate() //update the view
-
-//        var temp = arrayOfNulls<Coordinate?>(0)
-//        var angle = 45.0
-//        val frameTime = 1000L / 120L
-//        val degreePerFrame = 50.0 / 1000 * frameTime
-//        var isCalculating = false
-//        CoroutineScope(Dispatchers.Default).launch {
-//            do {
-//                delay(frameTime)
-//
-//                isCalculating = true
-//                temp = translate(cubeVertices, 2.0, 2.0, 2.0)
-//                temp = scale(temp, 40.0, 40.0, 40.0)
-//
-//                temp = quaternionRotate(temp, intArrayOf(0, 1, 1), angle)
-//
-//                temp = translate(temp, 200.0, 200.0, 0.0)
-//                isCalculating = false
-//
-//                angle += degreePerFrame
-//                angle = if (angle >= 360) 0.0 else angle
-//            } while (true)
-//        }
-//        CoroutineScope((Dispatchers.Default)).launch {
-//            while (true) {
-//                delay(frameTime)
-//                if (isCalculating.not()) {
-//                    drawCubeVertices = temp
-//                    thisView.invalidate() //update the view
-//                }
-//            }
-//        }
-
-        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, -2.0)
-        drawCubeVertices = perspectiveProjection(
-            drawCubeVertices,
-            100.0,
-            doubleArrayOf(-1.0, -1.0, 1.0, 1.0, 1.0, 1.1)
-        )
-        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
-        drawCubeVertices = translate(drawCubeVertices, 200.0, 200.0, 0.0)
-        thisView.invalidate()
+        val frameTime = 1000L / 120L
+        CoroutineScope((Dispatchers.Default)).launch {
+            do {
+                delay(2000)
+                resetParts()
+                positionParts()
+                invalidate()
+            }while (true)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
         //draw objects on the screen
         super.onDraw(canvas)
-        drawCube(canvas) //draw a cube onto the screen
+        //draw a cube onto the screen
+        drawAndroid.forEachIndexed { index, coordinates ->
+            drawCube(canvas, coordinates, paints[index])
+        }
+    }
+
+    private fun resetParts() {
+        drawAndroid.forEachIndexed { index, _ ->
+            drawAndroid[index] = baseAndroid[index]
+        }
+    }
+
+    private fun positionParts() {
+        drawAndroid[HEAD] = translate(drawAndroid[HEAD], (width / 2).toDouble(), 250.0,0.0)
+        val headBottomCenter = drawAndroid[HEAD].filterNotNull().let {
+            Coordinate(
+                (it[2].x + it[3].x + it[6].x + it[7].x) / 4,
+                (it[2].y + it[3].y + it[6].y + it[7].y) / 4,
+                (it[2].z + it[3].z + it[6].z + it[7].z) / 4,
+                1.0
+            )
+        }
+        val neckTopCenter = drawAndroid[NECK].filterNotNull().let {
+            Coordinate(
+                (it[0].x + it[1].x + it[4].x + it[5].x) / 4,
+                (it[0].y + it[1].y + it[4].y + it[5].y) / 4,
+                (it[0].z + it[1].z + it[4].z + it[5].z) / 4,
+                1.0
+            )
+        }
+        val neckBottomCenter = drawAndroid[NECK].filterNotNull().let {
+            Coordinate(
+                (it[2].x + it[3].x + it[6].x + it[7].x) / 4,
+                (it[2].y + it[3].y + it[6].y + it[7].y) / 4,
+                (it[2].z + it[3].z + it[6].z + it[7].z) / 4,
+                1.0
+            )
+        }
+        drawAndroid[NECK] = translate(drawAndroid[NECK], neckTopCenter.x + headBottomCenter.x, neckTopCenter.y + headBottomCenter.y + (neckBottomCenter.y - neckTopCenter.y), neckTopCenter.z + headBottomCenter.z)
     }
 
     //*********************************
     // Matrix and transformation functions
-    fun getIdentityMatrix(): DoubleArray { //return an 4x4 identity matrix
+    private fun getIdentityMatrix(): DoubleArray { //return an 4x4 identity matrix
         val matrix = DoubleArray(16)
         matrix[0] = 1.0
         matrix[1] = 0.0
@@ -138,7 +240,7 @@ class MyView(context: Context?) : View(context, null) {
         return result
     }
 
-    fun transformation(
+    private fun transformation(
         vertex: Coordinate?,
         matrix: DoubleArray
     ): Coordinate { //affine transformation with homogeneous coordinates
@@ -159,7 +261,7 @@ class MyView(context: Context?) : View(context, null) {
 
     //***********************************************************
     // Affine transformation
-    fun translate(
+    private fun translate(
         vertices: Array<Coordinate?>,
         tx: Double,
         ty: Double,
@@ -231,7 +333,7 @@ class MyView(context: Context?) : View(context, null) {
         return result
     }
 
-    fun quaternionCalculate(
+    private fun quaternionCalculate(
         vertex: Coordinate,
         rotateAxis: IntArray,
         rotateDegree: Double
@@ -270,7 +372,7 @@ class MyView(context: Context?) : View(context, null) {
 
     //***********************************************************
     // Perspective projection
-    fun perspectiveProjection(
+    private fun perspectiveProjection(
         vertices: Array<Coordinate?>,
         fovInDegree: Double,
         plane: DoubleArray
@@ -299,19 +401,23 @@ class MyView(context: Context?) : View(context, null) {
         return transformation(vertices, m)
     }
 
-    private fun drawCube(canvas: Canvas) { //draw a cube on the screen
-        drawLinePairs(canvas, drawCubeVertices, 0, 1, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 1, 3, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 3, 2, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 2, 0, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 4, 5, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 5, 7, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 7, 6, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 6, 4, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 0, 4, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 1, 5, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 2, 6, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 3, 7, redPaint)
+    private fun drawCube(
+        canvas: Canvas,
+        cubeVertices: Array<Coordinate?>,
+        paint: Paint
+    ) { //draw a cube on the screen
+        drawLinePairs(canvas, cubeVertices, 0, 1, paint)
+        drawLinePairs(canvas, cubeVertices, 1, 3, paint)
+        drawLinePairs(canvas, cubeVertices, 3, 2, paint)
+        drawLinePairs(canvas, cubeVertices, 2, 0, paint)
+        drawLinePairs(canvas, cubeVertices, 4, 5, paint)
+        drawLinePairs(canvas, cubeVertices, 5, 7, paint)
+        drawLinePairs(canvas, cubeVertices, 7, 6, paint)
+        drawLinePairs(canvas, cubeVertices, 6, 4, paint)
+        drawLinePairs(canvas, cubeVertices, 0, 4, paint)
+        drawLinePairs(canvas, cubeVertices, 1, 5, paint)
+        drawLinePairs(canvas, cubeVertices, 2, 6, paint)
+        drawLinePairs(canvas, cubeVertices, 3, 7, paint)
     }
 
     private fun drawLinePairs(
@@ -348,4 +454,22 @@ class MyView(context: Context?) : View(context, null) {
         return transformation(vertices, matrix)
     }
 
+    companion object {
+        const val HEAD = 0
+        const val NECK = 1
+        const val CHEST = 2
+        const val HIP = 3
+        const val UPPER_LEFT_ARM = 4
+        const val LOWER_LEFT_ARM = 5
+        const val LEFT_HAND = 6
+        const val UPPER_RIGHT_ARM = 7
+        const val LOWER_RIGHT_ARM = 8
+        const val RIGHT_HAND = 9
+        const val UPPER_LEFT_LEG = 10
+        const val LOWER_LEFT_LEG = 11
+        const val LEFT_FOOT = 12
+        const val UPPER_RIGHT_LEG = 13
+        const val LOWER_RIGHT_LEG = 14
+        const val RIGHT_FOOT = 15
+    }
 }
