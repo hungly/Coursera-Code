@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import kotlinx.coroutines.CoroutineScope
@@ -83,7 +82,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val leftFootVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 75.0, 50.0, 125.0)
+        scale(cubeVertices, 75.0, 50.0, 150.0)
     }
 
     private val uRightLegVertices: Array<Coordinate> by lazy {
@@ -95,7 +94,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val rightFootVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 75.0, 50.0, 125.0)
+        scale(cubeVertices, 75.0, 50.0, 150.0)
     }
 
     private val fpsPaint by lazy {
@@ -247,6 +246,21 @@ class MyView(context: Context?) : View(context, null) {
 
     private var armAngle = 0.0
 
+    private var bodyAngle = 0.0
+    private var bodyRockDirection = BODY_ROCK_RATE
+
+    private var bodyTwistAngle = BODY_TWIST_LIMIT
+    private var bodyTwistDirection = BODY_TWIST_RATE
+
+    private var bodyXMovement = 0.0
+    private var bodyXDirection = BODY_X_MOVEMENT_RATE
+
+    private var upperLegBendAngle = UPPER_LEG_BEND_LOWER_LIMIT
+    private var upperLegBendDirection = UPPER_LEG_BEND_RATE
+
+    private var lowerLegBendAngle = LOWER_LEG_BEND_LOWER_LIMIT
+    private var lowerLegBendDirection = LOWER_LEG_BEND_RATE
+
     private var renderJob: Job? = null
 
     init {
@@ -277,13 +291,31 @@ class MyView(context: Context?) : View(context, null) {
 
                                 temp = headNod(temp)
 
-                                temp[UPPER_LEFT_ARM] = quaternionRotate(temp[UPPER_LEFT_ARM], intArrayOf(1,0,0), -80.0)
-                                temp[LOWER_LEFT_ARM] = quaternionRotate(temp[LOWER_LEFT_ARM], intArrayOf(0,0,1), -110.0)
-                                temp[LEFT_HAND] = quaternionRotate(temp[LEFT_HAND], intArrayOf(0,0,1), -110.0)
+                                temp[UPPER_LEFT_ARM] = quaternionRotate(
+                                    temp[UPPER_LEFT_ARM],
+                                    intArrayOf(1, 0, 0),
+                                    -80.0
+                                )
+                                temp[LOWER_LEFT_ARM] = quaternionRotate(
+                                    temp[LOWER_LEFT_ARM],
+                                    intArrayOf(0, 0, 1),
+                                    -110.0
+                                )
+                                temp[LEFT_HAND] =
+                                    quaternionRotate(temp[LEFT_HAND], intArrayOf(0, 0, 1), -110.0)
 
-                                temp[UPPER_RIGHT_ARM] = quaternionRotate(temp[UPPER_RIGHT_ARM], intArrayOf(1,0,0), -80.0)
-                                temp[LOWER_RIGHT_ARM] = quaternionRotate(temp[LOWER_RIGHT_ARM], intArrayOf(0,0,1), 110.0)
-                                temp[RIGHT_HAND] = quaternionRotate(temp[RIGHT_HAND], intArrayOf(0,0,1), 110.0)
+                                temp[UPPER_RIGHT_ARM] = quaternionRotate(
+                                    temp[UPPER_RIGHT_ARM],
+                                    intArrayOf(1, 0, 0),
+                                    -80.0
+                                )
+                                temp[LOWER_RIGHT_ARM] = quaternionRotate(
+                                    temp[LOWER_RIGHT_ARM],
+                                    intArrayOf(0, 0, 1),
+                                    110.0
+                                )
+                                temp[RIGHT_HAND] =
+                                    quaternionRotate(temp[RIGHT_HAND], intArrayOf(0, 0, 1), 110.0)
 
                                 temp[LOWER_LEFT_ARM] = rotateArm(temp[LOWER_LEFT_ARM], 0.0)
                                 temp[LEFT_HAND] = rotateArm(temp[LEFT_HAND], 0.0)
@@ -291,15 +323,58 @@ class MyView(context: Context?) : View(context, null) {
                                 temp[LOWER_RIGHT_ARM] = rotateArm(temp[LOWER_RIGHT_ARM], 180.0)
                                 temp[RIGHT_HAND] = rotateArm(temp[RIGHT_HAND], 180.0)
 
+                                temp[CHEST] = bodyRock(temp[CHEST])
+                                temp[CHEST] = bodyTwist(temp[CHEST])
+
+                                temp[UPPER_LEFT_LEG] = upperLegMovement(temp[UPPER_LEFT_LEG])
+                                temp[LOWER_LEFT_LEG] = lowerLegMovement(temp[LOWER_LEFT_LEG])
+
+                                temp[UPPER_RIGHT_LEG] = upperLegMovement(temp[UPPER_RIGHT_LEG])
+                                temp[LOWER_RIGHT_LEG] = lowerLegMovement(temp[LOWER_RIGHT_LEG])
+
+                                temp[UPPER_LEFT_LEG] = quaternionRotate(
+                                    temp[UPPER_LEFT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+                                temp[LOWER_LEFT_LEG] = quaternionRotate(
+                                    temp[LOWER_LEFT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+                                temp[LEFT_FOOT] = quaternionRotate(
+                                    temp[LEFT_FOOT],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+
+                                temp[UPPER_RIGHT_LEG] = quaternionRotate(
+                                    temp[UPPER_RIGHT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+                                temp[LOWER_RIGHT_LEG] = quaternionRotate(
+                                    temp[LOWER_RIGHT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+                                temp[RIGHT_FOOT] = quaternionRotate(
+                                    temp[RIGHT_FOOT],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+
                                 temp = positionParts(temp)
 
-//                                temp = rotateAndroid(temp)
-                                temp.forEachIndexed { index, coordinates ->
-                                    temp[index] =
-                                        quaternionRotate(coordinates, intArrayOf(0, 1, 0), 30.0)
-                                    temp[index] =
-                                        quaternionRotate(temp[index], intArrayOf(1, 0, 0), 10.0)
-                                }
+                                temp = upperBodyXMove(temp)
+
+                                temp = rotateAndroid(temp)
+//                                temp.forEachIndexed { index, coordinates ->
+//                                    temp[index] =
+//                                        quaternionRotate(coordinates, intArrayOf(0, 1, 0), 30.0)
+//                                    temp[index] =
+//                                        quaternionRotate(temp[index], intArrayOf(1, 0, 0), 10.0)
+//                                }
 
                                 temp = positionAndroid(temp)
 
@@ -354,7 +429,7 @@ class MyView(context: Context?) : View(context, null) {
         val yNormalizer = normalLowestPointOfFoot - lowestPointOfFoots
         partVertices.forEachIndexed { index, coordinates ->
             partVertices[index] =
-                translate(coordinates, xTranslationValue, yTranslationValue - yNormalizer, 0.0)
+                translate(coordinates, xTranslationValue, yTranslationValue + yNormalizer, 0.0)
         }
 
         return partVertices
@@ -413,6 +488,82 @@ class MyView(context: Context?) : View(context, null) {
         armAngle += ARM_ANGLE_CHANGE
         if (armAngle > 360) {
             armAngle = 0.0
+        }
+        return result
+    }
+
+    private fun bodyRock(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(0, 1, 0), bodyAngle)
+        bodyAngle += bodyRockDirection
+        bodyRockDirection = if (bodyAngle > BODY_ROCK_LIMIT) {
+            -BODY_ROCK_RATE
+        } else if (bodyAngle < -BODY_ROCK_LIMIT) {
+            BODY_ROCK_RATE
+        } else {
+            bodyRockDirection
+        }
+        return result
+    }
+
+    private fun bodyTwist(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(0, 0, 1), bodyTwistAngle)
+        bodyTwistAngle += bodyTwistDirection
+        bodyTwistDirection = if (bodyTwistAngle > BODY_TWIST_LIMIT) {
+            -BODY_TWIST_RATE
+        } else if (bodyTwistAngle < -BODY_TWIST_LIMIT) {
+            BODY_TWIST_RATE
+        } else {
+            bodyTwistDirection
+        }
+        return result
+    }
+
+    private fun upperBodyXMove(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        partVertices[HEAD] = translate(partVertices[HEAD], bodyXMovement, 0.0, 0.0)
+        partVertices[NECK] = translate(partVertices[NECK], bodyXMovement, 0.0, 0.0)
+        partVertices[CHEST] = translate(partVertices[CHEST], bodyXMovement, 0.0, 0.0)
+
+        partVertices[UPPER_LEFT_ARM] = translate(partVertices[UPPER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_LEFT_ARM] = translate(partVertices[LOWER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LEFT_HAND] = translate(partVertices[LEFT_HAND], bodyXMovement, 0.0, 0.0)
+
+        partVertices[UPPER_RIGHT_ARM] = translate(partVertices[UPPER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_RIGHT_ARM] = translate(partVertices[LOWER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[RIGHT_HAND] = translate(partVertices[RIGHT_HAND], bodyXMovement, 0.0, 0.0)
+
+        bodyXMovement += bodyXDirection
+        bodyXDirection = if (bodyXMovement > BODY_X_MOVEMENT_LIMIT) {
+            -BODY_X_MOVEMENT_RATE
+        } else if (bodyXMovement < -BODY_X_MOVEMENT_LIMIT) {
+            BODY_X_MOVEMENT_RATE
+        } else {
+            bodyXDirection
+        }
+        return partVertices
+    }
+
+    private fun upperLegMovement(partVertices: Array<Coordinate>) : Array<Coordinate>{
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), -upperLegBendAngle)
+        upperLegBendAngle += upperLegBendDirection
+        upperLegBendDirection = if (upperLegBendAngle > UPPER_LEG_BEND_UPPER_LIMIT) {
+            -UPPER_LEG_BEND_RATE
+        } else if (upperLegBendAngle < UPPER_LEG_BEND_LOWER_LIMIT) {
+            UPPER_LEG_BEND_RATE
+        } else {
+            upperLegBendDirection
+        }
+        return result
+    }
+
+    private fun lowerLegMovement(partVertices: Array<Coordinate>) : Array<Coordinate>{
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), lowerLegBendAngle)
+        lowerLegBendAngle += lowerLegBendDirection
+        lowerLegBendDirection = if (lowerLegBendAngle > LOWER_LEG_BEND_UPPER_LIMIT) {
+            -LOWER_LEG_BEND_RATE
+        } else if (lowerLegBendAngle < LOWER_LEG_BEND_LOWER_LIMIT) {
+            LOWER_LEG_BEND_RATE
+        } else {
+            lowerLegBendDirection
         }
         return result
     }
@@ -833,7 +984,7 @@ class MyView(context: Context?) : View(context, null) {
         const val BOTTOM_RIGHT_BACK = 6
         const val BOTTOM_RIGHT_FRONT = 7
 
-        const val FOOT_Z_OFFSET = 25.0
+        const val FOOT_Z_OFFSET = 50.0
 
         const val Y_ROTATION_LIMIT = 50.0
         const val Y_ROTATION_CHANGE = 0.5
@@ -842,7 +993,23 @@ class MyView(context: Context?) : View(context, null) {
         const val HEAD_NOD_UPPER_LIMIT = 30.0
         const val HEAD_NOD_CHANGE = 1.0
 
-        const val ARM_ANGLE = 0.0
-        const val ARM_ANGLE_CHANGE = 1.0
+        const val ARM_ANGLE_CHANGE = 0.75
+
+        const val BODY_ROCK_LIMIT = 10.0
+        const val BODY_ROCK_RATE = 0.25
+
+        const val BODY_TWIST_LIMIT = 5.0
+        const val BODY_TWIST_RATE = 0.1
+
+        const val BODY_X_MOVEMENT_LIMIT = 25
+        const val BODY_X_MOVEMENT_RATE = 0.5
+
+        const val UPPER_LEG_BEND_UPPER_LIMIT = 75.0
+        const val UPPER_LEG_BEND_LOWER_LIMIT = 60.0
+        const val UPPER_LEG_BEND_RATE = 0.1
+
+        const val LOWER_LEG_BEND_UPPER_LIMIT = 25.0
+        const val LOWER_LEG_BEND_LOWER_LIMIT = 10.0
+        const val LOWER_LEG_BEND_RATE = 0.1
     }
 }
