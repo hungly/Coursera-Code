@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import android.view.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tan
@@ -55,7 +57,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val leftHandVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 30.0, 50.0, 40.0)
+        scale(cubeVertices, 40.0, 40.0, 60.0)
     }
 
     private val uRightArmVertices: Array<Coordinate> by lazy {
@@ -67,7 +69,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val rightHandVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 30.0, 50.0, 40.0)
+        scale(cubeVertices, 40.0, 40.0, 60.0)
     }
 
     private val uLeftLegVertices: Array<Coordinate> by lazy {
@@ -79,7 +81,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val leftFootVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 75.0, 50.0, 100.0)
+        scale(cubeVertices, 75.0, 50.0, 125.0)
     }
 
     private val uRightLegVertices: Array<Coordinate> by lazy {
@@ -91,7 +93,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val rightFootVertices: Array<Coordinate> by lazy {
-        scale(cubeVertices, 75.0, 50.0, 100.0)
+        scale(cubeVertices, 75.0, 50.0, 125.0)
     }
 
     private val headPaint by lazy {
@@ -219,8 +221,11 @@ class MyView(context: Context?) : View(context, null) {
     private var isCalculating = false
     private var isDrawing = false
 
-    var angle = 0.0
-    var angleDirection = 1.0
+    private var angle = 0.0
+    private var angleDirection = Y_ROTATION_CHANGE
+    private var androidHeight = 0.0
+    private var yTranslationValue = 0.0
+    private var normalLowestPointOfFoot = 0.0
 
     init {
         val frameTime = 1000L / 120L
@@ -247,30 +252,54 @@ class MyView(context: Context?) : View(context, null) {
                 if (isCalculating.not()) {
                     withContext(Dispatchers.Default) {
                         isCalculating = true
+
                         // Reset part position
                         var temp = resetParts()
 
-                        // Arrange part into appropriate position
                         temp = positionParts(temp)
 
-                        // Rotate
                         temp = rotateAndroid(temp)
 
-                        // Position at center
-                        val x = (width / 2).toDouble()
-                        val y = (height/ 2).toDouble() - 800
-                        temp.forEachIndexed { index, coordinates ->
-                            temp[index] = translate(coordinates, x, y, 0.0)
-                        }
+                        temp = positionAndroid(temp)
 
-                        // Update coordinates to draw buffer
-                        temp.forEachIndexed { index, coordinates ->
-                            drawAndroid[index] = coordinates
-                        }
+                        updateDrawBuffer(temp)
+
                         isCalculating = false
                     }
                 }
             } while (true)
+        }
+    }
+
+    private fun positionAndroid(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        val result = partVertices.map { coordinates ->
+            coordinates.map { coordinate ->
+                coordinate.copy()
+            }.toTypedArray()
+        }.toTypedArray()
+
+        if (yTranslationValue == 0.0) {
+            yTranslationValue = (height.toDouble() + androidHeight) / 2
+        }
+
+        val x = (width / 2).toDouble()
+        val lowestPointOfFoots =
+            max(
+                calculateBottomCenter(result[LEFT_FOOT]).y,
+                calculateBottomCenter(result[RIGHT_FOOT]).y
+            )
+        val yNormalizer = normalLowestPointOfFoot - lowestPointOfFoots
+        result.forEachIndexed { index, coordinates ->
+            Log.d("HUNG", "$x,$yTranslationValue")
+            result[index] = translate(coordinates, x, yTranslationValue - yNormalizer, 0.0)
+        }
+
+        return result
+    }
+
+    private fun updateDrawBuffer(partVertices: Array<Array<Coordinate>>) {
+        partVertices.forEachIndexed { index, coordinates ->
+            drawAndroid[index] = coordinates
         }
     }
 
@@ -292,12 +321,13 @@ class MyView(context: Context?) : View(context, null) {
 
         result.forEachIndexed { index, coordinates ->
             result[index] = quaternionRotate(coordinates, intArrayOf(0, 1, 0), angle)
+            result[index] = quaternionRotate(result[index], intArrayOf(1, 0, 0), 10.0)
         }
         angle += angleDirection
-        angleDirection = if (angle > 45) {
-            -1.0
-        } else if (angle < -45) {
-            1.0
+        angleDirection = if (angle > Y_ROTATION_LIMIT) {
+            -Y_ROTATION_CHANGE
+        } else if (angle < -Y_ROTATION_LIMIT) {
+            Y_ROTATION_CHANGE
         } else {
             angleDirection
         }
@@ -341,14 +371,24 @@ class MyView(context: Context?) : View(context, null) {
         result[LOWER_LEFT_LEG] =
             alignTopBottom(result[UPPER_LEFT_LEG], result[LOWER_LEFT_LEG])
         result[LEFT_FOOT] =
-            alignTopBottom(result[LOWER_LEFT_LEG], result[LEFT_FOOT], zOffset = 25.0)
+            alignTopBottom(result[LOWER_LEFT_LEG], result[LEFT_FOOT], zOffset = -25.0)
 
         result[UPPER_RIGHT_LEG] =
             alignTopBottom(result[HIP], result[UPPER_RIGHT_LEG], 100.0)
         result[LOWER_RIGHT_LEG] =
             alignTopBottom(result[UPPER_RIGHT_LEG], result[LOWER_RIGHT_LEG])
         result[RIGHT_FOOT] =
-            alignTopBottom(result[LOWER_RIGHT_LEG], result[RIGHT_FOOT], zOffset = 25.0)
+            alignTopBottom(result[LOWER_RIGHT_LEG], result[RIGHT_FOOT], zOffset = -25.0)
+
+        if (normalLowestPointOfFoot == 0.0) {
+            normalLowestPointOfFoot = max(
+                calculateBottomCenter(result[LEFT_FOOT]).y,
+                calculateBottomCenter(result[RIGHT_FOOT]).y
+            )
+        }
+        if (androidHeight == 0.0) {
+            androidHeight = normalLowestPointOfFoot - calculateTopCenter(result[HEAD]).y
+        }
 
         return result
     }
@@ -704,5 +744,8 @@ class MyView(context: Context?) : View(context, null) {
         const val TOP_RIGHT_FRONT = 5
         const val BOTTOM_RIGHT_BACK = 6
         const val BOTTOM_RIGHT_FRONT = 7
+
+        const val Y_ROTATION_LIMIT = 50.0
+        const val Y_ROTATION_CHANGE = 1.0
     }
 }
