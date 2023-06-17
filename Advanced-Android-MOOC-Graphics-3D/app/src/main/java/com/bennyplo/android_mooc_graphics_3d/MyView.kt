@@ -245,6 +245,8 @@ class MyView(context: Context?) : View(context, null) {
     private var headAngle = 0.0
     private var headNodDirection = HEAD_NOD_CHANGE
 
+    private var armAngle = 0.0
+
     private var renderJob: Job? = null
 
     init {
@@ -263,7 +265,8 @@ class MyView(context: Context?) : View(context, null) {
 
                                 currentTime = System.currentTimeMillis()
                                 if (currentTime - lastFrameCount > 1000) {
-                                    val t = frameCount.toDouble() / (currentTime - lastFrameCount) * 1000
+                                    val t =
+                                        frameCount.toDouble() / (currentTime - lastFrameCount) * 1000
                                     fps = String.format("FPS: %.1f", t)
                                     frameCount = 0
                                     lastFrameCount = currentTime
@@ -274,13 +277,29 @@ class MyView(context: Context?) : View(context, null) {
 
                                 temp = headNod(temp)
 
+                                temp[UPPER_LEFT_ARM] = quaternionRotate(temp[UPPER_LEFT_ARM], intArrayOf(1,0,0), -80.0)
+                                temp[LOWER_LEFT_ARM] = quaternionRotate(temp[LOWER_LEFT_ARM], intArrayOf(0,0,1), -110.0)
+                                temp[LEFT_HAND] = quaternionRotate(temp[LEFT_HAND], intArrayOf(0,0,1), -110.0)
+
+                                temp[UPPER_RIGHT_ARM] = quaternionRotate(temp[UPPER_RIGHT_ARM], intArrayOf(1,0,0), -80.0)
+                                temp[LOWER_RIGHT_ARM] = quaternionRotate(temp[LOWER_RIGHT_ARM], intArrayOf(0,0,1), 110.0)
+                                temp[RIGHT_HAND] = quaternionRotate(temp[RIGHT_HAND], intArrayOf(0,0,1), 110.0)
+
+                                temp[LOWER_LEFT_ARM] = rotateArm(temp[LOWER_LEFT_ARM], 0.0)
+                                temp[LEFT_HAND] = rotateArm(temp[LEFT_HAND], 0.0)
+
+                                temp[LOWER_RIGHT_ARM] = rotateArm(temp[LOWER_RIGHT_ARM], 180.0)
+                                temp[RIGHT_HAND] = rotateArm(temp[RIGHT_HAND], 180.0)
+
                                 temp = positionParts(temp)
 
-                                temp = rotateAndroid(temp)
-//                        temp.forEachIndexed { index, coordinates ->
-//                            temp[index] = quaternionRotate(coordinates, intArrayOf(0, 1, 0), 30.0)
-//                            temp[index] = quaternionRotate(temp[index], intArrayOf(1, 0, 0), 10.0)
-//                        }
+//                                temp = rotateAndroid(temp)
+                                temp.forEachIndexed { index, coordinates ->
+                                    temp[index] =
+                                        quaternionRotate(coordinates, intArrayOf(0, 1, 0), 30.0)
+                                    temp[index] =
+                                        quaternionRotate(temp[index], intArrayOf(1, 0, 0), 10.0)
+                                }
 
                                 temp = positionAndroid(temp)
 
@@ -389,6 +408,15 @@ class MyView(context: Context?) : View(context, null) {
         return partVertices
     }
 
+    private fun rotateArm(partVertices: Array<Coordinate>, offset: Double): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), armAngle + offset)
+        armAngle += ARM_ANGLE_CHANGE
+        if (armAngle > 360) {
+            armAngle = 0.0
+        }
+        return result
+    }
+
     private fun resetParts() = baseAndroid.map { coordinates ->
         coordinates.map { coordinate ->
             coordinate.copy()
@@ -421,14 +449,22 @@ class MyView(context: Context?) : View(context, null) {
         partVertices[LOWER_LEFT_LEG] =
             alignTopBottom(partVertices[UPPER_LEFT_LEG], partVertices[LOWER_LEFT_LEG])
         partVertices[LEFT_FOOT] =
-            alignTopBottom(partVertices[LOWER_LEFT_LEG], partVertices[LEFT_FOOT], zOffset = -FOOT_Z_OFFSET)
+            alignTopBottom(
+                partVertices[LOWER_LEFT_LEG],
+                partVertices[LEFT_FOOT],
+                zOffset = -FOOT_Z_OFFSET
+            )
 
         partVertices[UPPER_RIGHT_LEG] =
             alignTopBottom(partVertices[HIP], partVertices[UPPER_RIGHT_LEG], 100.0)
         partVertices[LOWER_RIGHT_LEG] =
             alignTopBottom(partVertices[UPPER_RIGHT_LEG], partVertices[LOWER_RIGHT_LEG])
         partVertices[RIGHT_FOOT] =
-            alignTopBottom(partVertices[LOWER_RIGHT_LEG], partVertices[RIGHT_FOOT], zOffset = -FOOT_Z_OFFSET)
+            alignTopBottom(
+                partVertices[LOWER_RIGHT_LEG],
+                partVertices[RIGHT_FOOT],
+                zOffset = -FOOT_Z_OFFSET
+            )
 
         if (normalLowestPointOfFoot == 0.0) {
             normalLowestPointOfFoot = max(
@@ -454,9 +490,9 @@ class MyView(context: Context?) : View(context, null) {
         val childBottomCenter = calculateBottomCenter(child)
         return translate(
             child,
-            childTopCenter.x + parentBottomCenter.x + xOffset,
-            childTopCenter.y + parentBottomCenter.y + (childBottomCenter.y - childTopCenter.y),
-            childTopCenter.z + parentBottomCenter.z + zOffset
+            parentBottomCenter.x - childTopCenter.x + xOffset,
+            parentBottomCenter.y + childTopCenter.y + (childBottomCenter.y - childTopCenter.y),
+            parentBottomCenter.z - childTopCenter.z + zOffset
         )
     }
 
@@ -483,7 +519,7 @@ class MyView(context: Context?) : View(context, null) {
             arm,
             x,
             bodyTopCenter.y - armTopCenter.y,
-            bodyTopCenter.z + armTopCenter.z
+            bodyTopCenter.z - armTopCenter.z
         )
     }
 
@@ -800,10 +836,13 @@ class MyView(context: Context?) : View(context, null) {
         const val FOOT_Z_OFFSET = 25.0
 
         const val Y_ROTATION_LIMIT = 50.0
-        const val Y_ROTATION_CHANGE = 1.0
+        const val Y_ROTATION_CHANGE = 0.5
 
         const val HEAD_NOD_LOWER_LIMIT = -20.0
         const val HEAD_NOD_UPPER_LIMIT = 30.0
-        const val HEAD_NOD_CHANGE = 2.0
+        const val HEAD_NOD_CHANGE = 1.0
+
+        const val ARM_ANGLE = 0.0
+        const val ARM_ANGLE_CHANGE = 1.0
     }
 }
