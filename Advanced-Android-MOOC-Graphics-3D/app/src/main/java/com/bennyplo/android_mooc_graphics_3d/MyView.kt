@@ -107,83 +107,81 @@ class MyView(context: Context?) : View(context, null) {
         }
     }
 
-    private val headPaint by lazy {
+    private val bodyBorderPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
+            style = Paint.Style.STROKE
             color = Color.BLACK
             strokeWidth = 2f
+        }
+    }
+
+    private val headPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = Color.DKGRAY
         }
     }
 
     private val neckPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
+            style = Paint.Style.FILL
             color = Color.MAGENTA
-            strokeWidth = 2f
         }
     }
 
     private val chestPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
-            color = Color.DKGRAY
-            strokeWidth = 2f
+            style = Paint.Style.FILL
+            color = Color.GRAY
         }
     }
 
     private val hipPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
+            style = Paint.Style.FILL
             color = Color.CYAN
-            strokeWidth = 2f
         }
     }
 
     private val uArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
-            color = Color.GRAY
-            strokeWidth = 2f
+            style = Paint.Style.FILL
+            color = Color.LTGRAY
         }
     }
 
     private val lArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
+            style = Paint.Style.FILL
             color = Color.BLUE
-            strokeWidth = 2f
         }
     }
 
     private val handPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
-            color = Color.LTGRAY
-            strokeWidth = 2f
+            style = Paint.Style.FILL
+            color = Color.RED
         }
     }
 
     private val uLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
+            style = Paint.Style.FILL
             color = Color.GREEN
-            strokeWidth = 2f
         }
     }
 
     private val lLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
-            color = Color.RED
-            strokeWidth = 2f
+            style = Paint.Style.FILL
+            color = Color.DKGRAY
         }
     }
 
     private val footPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL_AND_STROKE
-            color = Color.BLACK
-            strokeWidth = 2f
+            style = Paint.Style.FILL
+            color = Color.MAGENTA
         }
     }
 
@@ -1067,6 +1065,7 @@ class MyView(context: Context?) : View(context, null) {
         }
         path.close()
         canvas.drawPath(path, paint)
+        canvas.drawPath(path, bodyBorderPaint)
     }
 
     private fun drawLinePairs(
