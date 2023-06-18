@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import kotlinx.coroutines.CoroutineScope
@@ -232,7 +233,11 @@ class MyView(context: Context?) : View(context, null) {
     private var currentTime = System.currentTimeMillis()
     private var fps = ""
 
-    private val drawAndroid by lazy { arrayOf(*baseAndroid) }
+    private val drawAndroid by lazy {
+        Array(baseAndroid.size) {
+            it to baseAndroid[it]
+        }
+    }
 
     private var isCalculating = false
     private var isDrawing = false
@@ -383,7 +388,9 @@ class MyView(context: Context?) : View(context, null) {
 
                                 temp = positionAndroid(temp)
 
-                                updateDrawBuffer(temp)
+                                val t = orderVertices(temp)
+
+                                updateDrawBuffer(t)
 
                                 isCalculating = false
                             }
@@ -417,6 +424,17 @@ class MyView(context: Context?) : View(context, null) {
         }
     }
 
+    private fun orderVertices(partVertices: Array<Array<Coordinate>>): Map<Int, Array<Coordinate>> {
+        val result = hashMapOf<Int, Array<Coordinate>>()
+        partVertices.forEachIndexed { index, coordinates ->
+            result[index] = coordinates
+        }
+        val t = result.toList().sortedByDescending {
+            it.second.minOf { coordinate -> coordinate.z }
+        }.toMap()
+        return t
+    }
+
     private fun positionAndroid(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
         if (yTranslationValue == 0.0) {
             yTranslationValue = (height.toDouble() - androidHeight) / 2
@@ -440,9 +458,9 @@ class MyView(context: Context?) : View(context, null) {
         return partVertices
     }
 
-    private fun updateDrawBuffer(partVertices: Array<Array<Coordinate>>) {
-        partVertices.forEachIndexed { index, coordinates ->
-            drawAndroid[index] = coordinates
+    private fun updateDrawBuffer(partVertices: Map<Int, Array<Coordinate>>) {
+        partVertices.toList().forEachIndexed { index, pair ->
+            drawAndroid[index] = pair
         }
     }
 
@@ -450,10 +468,12 @@ class MyView(context: Context?) : View(context, null) {
         //draw objects on the screen
         super.onDraw(canvas)
         //draw a cube onto the screen
-        drawAndroid.forEachIndexed { index, coordinates ->
-            drawCubeAsPath(canvas, coordinates, paints[index])
+        drawAndroid.forEach {
+            drawCubeAsPath(canvas, it.second, paints[it.first])
         }
         canvas.drawText(fps, 25F, height - 25F, fpsPaint)
+
+        Log.d("HUNG", "$drawAndroid")
     }
 
     private fun rotateAndroid(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
