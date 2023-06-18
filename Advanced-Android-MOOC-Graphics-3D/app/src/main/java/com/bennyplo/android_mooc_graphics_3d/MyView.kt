@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.tan
 
@@ -235,7 +236,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val drawAndroid by lazy {
         Array(baseAndroid.size) {
-            it to baseAndroid[it]
+            it to (baseAndroid[it] to intArrayOf())
         }
     }
 
@@ -388,7 +389,9 @@ class MyView(context: Context?) : View(context, null) {
 
                                 temp = positionAndroid(temp)
 
-                                val t = orderVertices(temp)
+                                val t = markInVisibleFace(temp).let {
+                                    orderVertices(it)
+                                }
 
                                 updateDrawBuffer(t)
 
@@ -424,13 +427,34 @@ class MyView(context: Context?) : View(context, null) {
         }
     }
 
-    private fun orderVertices(partVertices: Array<Array<Coordinate>>): Map<Int, Array<Coordinate>> {
-        val result = hashMapOf<Int, Array<Coordinate>>()
+    private fun markInVisibleFace(partVertices: Array<Array<Coordinate>>): Array<Pair<Array<Coordinate>, IntArray>> {
+        val invisibleFaces = arrayListOf<Int>()
+        var backMostPoint: Coordinate
+        return partVertices.map { coordinates ->
+            invisibleFaces.clear()
+            backMostPoint = coordinates.maxBy { coordinate -> coordinate.z }
+            coordinates.filter { coordinate ->
+                coordinate.z.toInt() == backMostPoint.z.toInt()
+            }.map {
+                coordinates.indexOf(it)
+            }.forEach { point ->
+                FACES_MAP.keys.forEach {
+                    if (it.contains(point)) {
+                        invisibleFaces.add(FACES_MAP[it]!!)
+                    }
+                }
+            }
+            coordinates to invisibleFaces.toIntArray()
+        }.toTypedArray()
+    }
+
+    private fun orderVertices(partVertices: Array<Pair<Array<Coordinate>, IntArray>>): Map<Int, Pair<Array<Coordinate>, IntArray>> {
+        val result = hashMapOf<Int, Pair<Array<Coordinate>, IntArray>>()
         partVertices.forEachIndexed { index, coordinates ->
             result[index] = coordinates
         }
         val t = result.toList().sortedByDescending {
-            it.second.minOf { coordinate -> coordinate.z }
+            it.second.first.minOf { coordinate -> coordinate.z }
         }.toMap()
         return t
     }
@@ -458,7 +482,7 @@ class MyView(context: Context?) : View(context, null) {
         return partVertices
     }
 
-    private fun updateDrawBuffer(partVertices: Map<Int, Array<Coordinate>>) {
+    private fun updateDrawBuffer(partVertices: Map<Int, Pair<Array<Coordinate>, IntArray>>) {
         partVertices.toList().forEachIndexed { index, pair ->
             drawAndroid[index] = pair
         }
@@ -952,70 +976,81 @@ class MyView(context: Context?) : View(context, null) {
 
     private fun drawCubeAsPath(
         canvas: Canvas,
-        cubeVertices: Array<Coordinate>,
+        cubeVertices: Pair<Array<Coordinate>, IntArray>,
         paint: Paint
     ) {
         path.reset()
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[TOP_LEFT_BACK],
-                cubeVertices[TOP_RIGHT_BACK],
-                cubeVertices[BOTTOM_RIGHT_BACK],
-                cubeVertices[BOTTOM_LEFT_BACK]
-            ),
-            paint
-        )
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[TOP_LEFT_BACK],
-                cubeVertices[TOP_LEFT_FRONT],
-                cubeVertices[BOTTOM_LEFT_FRONT],
-                cubeVertices[BOTTOM_LEFT_BACK]
-            ),
-            paint
-        )
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[TOP_LEFT_BACK],
-                cubeVertices[TOP_RIGHT_BACK],
-                cubeVertices[TOP_RIGHT_FRONT],
-                cubeVertices[TOP_RIGHT_BACK]
-            ),
-            paint
-        )
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[TOP_RIGHT_BACK],
-                cubeVertices[TOP_RIGHT_FRONT],
-                cubeVertices[BOTTOM_RIGHT_FRONT],
-                cubeVertices[BOTTOM_RIGHT_BACK]
-            ),
-            paint
-        )
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[BOTTOM_LEFT_BACK],
-                cubeVertices[BOTTOM_RIGHT_BACK],
-                cubeVertices[BOTTOM_RIGHT_FRONT],
-                cubeVertices[BOTTOM_LEFT_FRONT]
-            ),
-            paint
-        )
-        drawPath(
-            canvas,
-            arrayOf(
-                cubeVertices[TOP_LEFT_FRONT],
-                cubeVertices[TOP_RIGHT_FRONT],
-                cubeVertices[BOTTOM_RIGHT_FRONT],
-                cubeVertices[BOTTOM_LEFT_FRONT]
-            ),
-            paint
-        )
+        FACES_MAP.forEach {
+            if (cubeVertices.second.contains(it.value).not()) {
+                drawPath(
+                    canvas,
+                    it.key.map { point ->
+                        cubeVertices.first[point]
+                    }.toTypedArray(),
+                    paint
+                )
+            }
+        }
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[TOP_LEFT_BACK],
+//                cubeVertices[TOP_RIGHT_BACK],
+//                cubeVertices[BOTTOM_RIGHT_BACK],
+//                cubeVertices[BOTTOM_LEFT_BACK]
+//            ),
+//            paint
+//        )
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[TOP_LEFT_BACK],
+//                cubeVertices[TOP_LEFT_FRONT],
+//                cubeVertices[BOTTOM_LEFT_FRONT],
+//                cubeVertices[BOTTOM_LEFT_BACK]
+//            ),
+//            paint
+//        )
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[TOP_LEFT_BACK],
+//                cubeVertices[TOP_RIGHT_BACK],
+//                cubeVertices[TOP_RIGHT_FRONT],
+//                cubeVertices[TOP_RIGHT_BACK]
+//            ),
+//            paint
+//        )
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[TOP_RIGHT_BACK],
+//                cubeVertices[TOP_RIGHT_FRONT],
+//                cubeVertices[BOTTOM_RIGHT_FRONT],
+//                cubeVertices[BOTTOM_RIGHT_BACK]
+//            ),
+//            paint
+//        )
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[BOTTOM_LEFT_BACK],
+//                cubeVertices[BOTTOM_RIGHT_BACK],
+//                cubeVertices[BOTTOM_RIGHT_FRONT],
+//                cubeVertices[BOTTOM_LEFT_FRONT]
+//            ),
+//            paint
+//        )
+//        drawPath(
+//            canvas,
+//            arrayOf(
+//                cubeVertices[TOP_LEFT_FRONT],
+//                cubeVertices[TOP_RIGHT_FRONT],
+//                cubeVertices[BOTTOM_RIGHT_FRONT],
+//                cubeVertices[BOTTOM_LEFT_FRONT]
+//            ),
+//            paint
+//        )
     }
 
     private fun drawPath(
@@ -1069,60 +1104,106 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     companion object {
-        const val FRAME_TIME = 1000L / 120L
+        private const val FRAME_TIME = 1000L / 120L
 
-        const val HEAD = 0
-        const val NECK = 1
-        const val CHEST = 2
-        const val HIP = 3
-        const val UPPER_LEFT_ARM = 4
-        const val LOWER_LEFT_ARM = 5
-        const val LEFT_HAND = 6
-        const val UPPER_RIGHT_ARM = 7
-        const val LOWER_RIGHT_ARM = 8
-        const val RIGHT_HAND = 9
-        const val UPPER_LEFT_LEG = 10
-        const val LOWER_LEFT_LEG = 11
-        const val LEFT_FOOT = 12
-        const val UPPER_RIGHT_LEG = 13
-        const val LOWER_RIGHT_LEG = 14
-        const val RIGHT_FOOT = 15
+        private const val HEAD = 0
+        private const val NECK = 1
+        private const val CHEST = 2
+        private const val HIP = 3
+        private const val UPPER_LEFT_ARM = 4
+        private const val LOWER_LEFT_ARM = 5
+        private const val LEFT_HAND = 6
+        private const val UPPER_RIGHT_ARM = 7
+        private const val LOWER_RIGHT_ARM = 8
+        private const val RIGHT_HAND = 9
+        private const val UPPER_LEFT_LEG = 10
+        private const val LOWER_LEFT_LEG = 11
+        private const val LEFT_FOOT = 12
+        private const val UPPER_RIGHT_LEG = 13
+        private const val LOWER_RIGHT_LEG = 14
+        private const val RIGHT_FOOT = 15
 
-        const val TOP_LEFT_BACK = 0
-        const val TOP_LEFT_FRONT = 1
-        const val BOTTOM_LEFT_BACK = 2
-        const val BOTTOM_LEFT_FRONT = 3
-        const val TOP_RIGHT_BACK = 4
-        const val TOP_RIGHT_FRONT = 5
-        const val BOTTOM_RIGHT_BACK = 6
-        const val BOTTOM_RIGHT_FRONT = 7
+        private const val TOP_LEFT_BACK = 0
+        private const val TOP_LEFT_FRONT = 1
+        private const val BOTTOM_LEFT_BACK = 2
+        private const val BOTTOM_LEFT_FRONT = 3
+        private const val TOP_RIGHT_BACK = 4
+        private const val TOP_RIGHT_FRONT = 5
+        private const val BOTTOM_RIGHT_BACK = 6
+        private const val BOTTOM_RIGHT_FRONT = 7
 
-        const val FOOT_Z_OFFSET = 50.0
+        private const val FOOT_Z_OFFSET = 50.0
 
-        const val Y_ROTATION_LIMIT = 50.0
-        const val Y_ROTATION_CHANGE = 0.5
+        private const val Y_ROTATION_LIMIT = 50.0
+        private const val Y_ROTATION_CHANGE = 0.5
 
-        const val HEAD_NOD_LOWER_LIMIT = -20.0
-        const val HEAD_NOD_UPPER_LIMIT = 30.0
-        const val HEAD_NOD_CHANGE = 1.0
+        private const val HEAD_NOD_LOWER_LIMIT = -20.0
+        private const val HEAD_NOD_UPPER_LIMIT = 30.0
+        private const val HEAD_NOD_CHANGE = 1.0
 
-        const val ARM_ANGLE_CHANGE = 0.75
+        private const val ARM_ANGLE_CHANGE = 0.75
 
-        const val BODY_ROCK_LIMIT = 10.0
-        const val BODY_ROCK_RATE = 0.25
+        private const val BODY_ROCK_LIMIT = 10.0
+        private const val BODY_ROCK_RATE = 0.25
 
-        const val BODY_TWIST_LIMIT = 5.0
-        const val BODY_TWIST_RATE = 0.1
+        private const val BODY_TWIST_LIMIT = 5.0
+        private const val BODY_TWIST_RATE = 0.1
 
-        const val BODY_X_MOVEMENT_LIMIT = 25
-        const val BODY_X_MOVEMENT_RATE = 0.5
+        private const val BODY_X_MOVEMENT_LIMIT = 25
+        private const val BODY_X_MOVEMENT_RATE = 0.5
 
-        const val UPPER_LEG_BEND_UPPER_LIMIT = 75.0
-        const val UPPER_LEG_BEND_LOWER_LIMIT = 60.0
-        const val UPPER_LEG_BEND_RATE = 0.1
+        private const val UPPER_LEG_BEND_UPPER_LIMIT = 75.0
+        private const val UPPER_LEG_BEND_LOWER_LIMIT = 60.0
+        private const val UPPER_LEG_BEND_RATE = 0.1
 
-        const val LOWER_LEG_BEND_UPPER_LIMIT = 25.0
-        const val LOWER_LEG_BEND_LOWER_LIMIT = 10.0
-        const val LOWER_LEG_BEND_RATE = 0.1
+        private const val LOWER_LEG_BEND_UPPER_LIMIT = 25.0
+        private const val LOWER_LEG_BEND_LOWER_LIMIT = 10.0
+        private const val LOWER_LEG_BEND_RATE = 0.1
+
+        private const val LEFT = 0
+        private const val TOP = 1
+        private const val RIGHT = 2
+        private const val BOTTOM = 3
+        private const val FRONT = 4
+        private const val BACK = 5
+
+        private val FACES_MAP = mapOf(
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_RIGHT_BACK,
+                BOTTOM_RIGHT_BACK,
+                BOTTOM_LEFT_BACK
+            ) to BACK,
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_LEFT_FRONT,
+                BOTTOM_LEFT_FRONT,
+                BOTTOM_LEFT_BACK
+            ) to LEFT,
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_RIGHT_BACK,
+                TOP_RIGHT_FRONT,
+                TOP_LEFT_FRONT
+            ) to TOP,
+            arrayOf(
+                TOP_RIGHT_BACK,
+                TOP_RIGHT_FRONT,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_RIGHT_BACK
+            ) to RIGHT,
+            arrayOf(
+                BOTTOM_LEFT_BACK,
+                BOTTOM_RIGHT_BACK,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_LEFT_FRONT
+            ) to BOTTOM,
+            arrayOf(
+                TOP_LEFT_FRONT,
+                TOP_RIGHT_FRONT,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_LEFT_FRONT
+            ) to FRONT,
+        )
     }
 }
