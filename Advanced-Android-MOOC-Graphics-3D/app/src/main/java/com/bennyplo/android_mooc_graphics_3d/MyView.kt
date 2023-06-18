@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.view.View
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import kotlinx.coroutines.CoroutineScope
@@ -106,7 +107,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val headPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.BLACK
             strokeWidth = 2f
         }
@@ -114,7 +115,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val neckPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.MAGENTA
             strokeWidth = 2f
         }
@@ -122,7 +123,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val chestPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.DKGRAY
             strokeWidth = 2f
         }
@@ -130,7 +131,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val hipPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.CYAN
             strokeWidth = 2f
         }
@@ -138,7 +139,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val uArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.GRAY
             strokeWidth = 2f
         }
@@ -146,7 +147,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val lArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.BLUE
             strokeWidth = 2f
         }
@@ -154,7 +155,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val handPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.LTGRAY
             strokeWidth = 2f
         }
@@ -162,7 +163,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val uLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.GREEN
             strokeWidth = 2f
         }
@@ -170,7 +171,7 @@ class MyView(context: Context?) : View(context, null) {
 
     private val lLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.RED
             strokeWidth = 2f
         }
@@ -178,30 +179,32 @@ class MyView(context: Context?) : View(context, null) {
 
     private val footPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             color = Color.BLACK
             strokeWidth = 2f
         }
     }
 
-    private val paints = arrayOf(
-        headPaint,
-        neckPaint,
-        chestPaint,
-        hipPaint,
-        uArmPaint,
-        lArmPaint,
-        handPaint,
-        uArmPaint,
-        lArmPaint,
-        handPaint,
-        uLegPaint,
-        lLegPaint,
-        footPaint,
-        uLegPaint,
-        lLegPaint,
-        footPaint,
-    )
+    private val paints by lazy {
+        arrayOf(
+            headPaint,
+            neckPaint,
+            chestPaint,
+            hipPaint,
+            uArmPaint,
+            lArmPaint,
+            handPaint,
+            uArmPaint,
+            lArmPaint,
+            handPaint,
+            uLegPaint,
+            lLegPaint,
+            footPaint,
+            uLegPaint,
+            lLegPaint,
+            footPaint,
+        )
+    }
 
     private val baseAndroid by lazy {
         arrayOf(
@@ -229,7 +232,7 @@ class MyView(context: Context?) : View(context, null) {
     private var currentTime = System.currentTimeMillis()
     private var fps = ""
 
-    private val drawAndroid = arrayOf(*baseAndroid)
+    private val drawAndroid by lazy { arrayOf(*baseAndroid) }
 
     private var isCalculating = false
     private var isDrawing = false
@@ -262,6 +265,8 @@ class MyView(context: Context?) : View(context, null) {
     private var lowerLegBendDirection = LOWER_LEG_BEND_RATE
 
     private var renderJob: Job? = null
+
+    private val path by lazy { Path() }
 
     init {
 
@@ -446,7 +451,7 @@ class MyView(context: Context?) : View(context, null) {
         super.onDraw(canvas)
         //draw a cube onto the screen
         drawAndroid.forEachIndexed { index, coordinates ->
-            drawCube(canvas, coordinates, paints[index])
+            drawCubeAsPath(canvas, coordinates, paints[index])
         }
         canvas.drawText(fps, 25F, height - 25F, fpsPaint)
     }
@@ -523,12 +528,16 @@ class MyView(context: Context?) : View(context, null) {
         partVertices[NECK] = translate(partVertices[NECK], bodyXMovement, 0.0, 0.0)
         partVertices[CHEST] = translate(partVertices[CHEST], bodyXMovement, 0.0, 0.0)
 
-        partVertices[UPPER_LEFT_ARM] = translate(partVertices[UPPER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
-        partVertices[LOWER_LEFT_ARM] = translate(partVertices[LOWER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[UPPER_LEFT_ARM] =
+            translate(partVertices[UPPER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_LEFT_ARM] =
+            translate(partVertices[LOWER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
         partVertices[LEFT_HAND] = translate(partVertices[LEFT_HAND], bodyXMovement, 0.0, 0.0)
 
-        partVertices[UPPER_RIGHT_ARM] = translate(partVertices[UPPER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
-        partVertices[LOWER_RIGHT_ARM] = translate(partVertices[LOWER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[UPPER_RIGHT_ARM] =
+            translate(partVertices[UPPER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_RIGHT_ARM] =
+            translate(partVertices[LOWER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
         partVertices[RIGHT_HAND] = translate(partVertices[RIGHT_HAND], bodyXMovement, 0.0, 0.0)
 
         bodyXMovement += bodyXDirection
@@ -542,7 +551,7 @@ class MyView(context: Context?) : View(context, null) {
         return partVertices
     }
 
-    private fun upperLegMovement(partVertices: Array<Coordinate>) : Array<Coordinate>{
+    private fun upperLegMovement(partVertices: Array<Coordinate>): Array<Coordinate> {
         val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), -upperLegBendAngle)
         upperLegBendAngle += upperLegBendDirection
         upperLegBendDirection = if (upperLegBendAngle > UPPER_LEG_BEND_UPPER_LIMIT) {
@@ -555,7 +564,7 @@ class MyView(context: Context?) : View(context, null) {
         return result
     }
 
-    private fun lowerLegMovement(partVertices: Array<Coordinate>) : Array<Coordinate>{
+    private fun lowerLegMovement(partVertices: Array<Coordinate>): Array<Coordinate> {
         val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), lowerLegBendAngle)
         lowerLegBendAngle += lowerLegBendDirection
         lowerLegBendDirection = if (lowerLegBendAngle > LOWER_LEG_BEND_UPPER_LIMIT) {
@@ -919,6 +928,90 @@ class MyView(context: Context?) : View(context, null) {
         drawLinePairs(canvas, cubeVertices, 1, 5, paint)
         drawLinePairs(canvas, cubeVertices, 2, 6, paint)
         drawLinePairs(canvas, cubeVertices, 3, 7, paint)
+    }
+
+    private fun drawCubeAsPath(
+        canvas: Canvas,
+        cubeVertices: Array<Coordinate>,
+        paint: Paint
+    ) {
+        path.reset()
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[TOP_LEFT_BACK],
+                cubeVertices[TOP_RIGHT_BACK],
+                cubeVertices[BOTTOM_RIGHT_BACK],
+                cubeVertices[BOTTOM_LEFT_BACK]
+            ),
+            paint
+        )
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[TOP_LEFT_BACK],
+                cubeVertices[TOP_LEFT_FRONT],
+                cubeVertices[BOTTOM_LEFT_FRONT],
+                cubeVertices[BOTTOM_LEFT_BACK]
+            ),
+            paint
+        )
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[TOP_LEFT_BACK],
+                cubeVertices[TOP_RIGHT_BACK],
+                cubeVertices[TOP_RIGHT_FRONT],
+                cubeVertices[TOP_RIGHT_BACK]
+            ),
+            paint
+        )
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[TOP_RIGHT_BACK],
+                cubeVertices[TOP_RIGHT_FRONT],
+                cubeVertices[BOTTOM_RIGHT_FRONT],
+                cubeVertices[BOTTOM_RIGHT_BACK]
+            ),
+            paint
+        )
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[BOTTOM_LEFT_BACK],
+                cubeVertices[BOTTOM_RIGHT_BACK],
+                cubeVertices[BOTTOM_RIGHT_FRONT],
+                cubeVertices[BOTTOM_LEFT_FRONT]
+            ),
+            paint
+        )
+        drawPath(
+            canvas,
+            arrayOf(
+                cubeVertices[TOP_LEFT_FRONT],
+                cubeVertices[TOP_RIGHT_FRONT],
+                cubeVertices[BOTTOM_RIGHT_FRONT],
+                cubeVertices[BOTTOM_LEFT_FRONT]
+            ),
+            paint
+        )
+    }
+
+    private fun drawPath(
+        canvas: Canvas,
+        cubeVertices: Array<Coordinate>,
+        paint: Paint
+    ) {
+        cubeVertices.forEachIndexed { index, coordinate ->
+            if (index == 0) {
+                path.moveTo(coordinate.x.toFloat(), coordinate.y.toFloat())
+            } else {
+                path.lineTo(coordinate.x.toFloat(), coordinate.y.toFloat())
+            }
+        }
+        path.close()
+        canvas.drawPath(path, paint)
     }
 
     private fun drawLinePairs(
