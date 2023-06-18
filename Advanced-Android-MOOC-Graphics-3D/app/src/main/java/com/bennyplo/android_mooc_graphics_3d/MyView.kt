@@ -3,8 +3,10 @@ package com.bennyplo.android_mooc_graphics_3d
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Shader
 import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
@@ -17,9 +19,9 @@ import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.tan
+import kotlin.random.Random
 
 class MyView(context: Context?) : View(context, null) {
 
@@ -104,6 +106,7 @@ class MyView(context: Context?) : View(context, null) {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 25F
+            isDither = true
         }
     }
 
@@ -112,76 +115,87 @@ class MyView(context: Context?) : View(context, null) {
             style = Paint.Style.STROKE
             color = Color.BLACK
             strokeWidth = 2f
+            isDither = true
         }
     }
 
     private val headPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.DKGRAY
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val neckPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.MAGENTA
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val chestPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.GRAY
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val hipPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.CYAN
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val uArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.LTGRAY
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val lArmPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.BLUE
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val handPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.RED
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val uLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.GREEN
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val lLegPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.DKGRAY
+            color = getRandomColor()
+            isDither = true
         }
     }
 
     private val footPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
-            color = Color.MAGENTA
+            color = getRandomColor()
+            isDither = true
         }
     }
 
@@ -271,6 +285,13 @@ class MyView(context: Context?) : View(context, null) {
     private var renderJob: Job? = null
 
     private val path by lazy { Path() }
+
+    private var startX = 0F
+    private var startY = 0F
+    private var endX = 0F
+    private var endY = 0F
+
+    private lateinit var gradient: LinearGradient
 
     init {
 
@@ -387,9 +408,7 @@ class MyView(context: Context?) : View(context, null) {
 
                                 temp = positionAndroid(temp)
 
-                                val t = markInVisibleFace(temp).let {
-                                    orderVertices(it)
-                                }
+                                val t = orderVertices(markInVisibleFace(temp))
 
                                 updateDrawBuffer(t)
 
@@ -980,6 +999,22 @@ class MyView(context: Context?) : View(context, null) {
         path.reset()
         FACES_MAP.forEach {
             if (cubeVertices.second.contains(it.value).not()) {
+                cubeVertices.first.let { coordinates ->
+                    startX = coordinates[BOTTOM_RIGHT_BACK].x.toFloat()
+                    startY = coordinates[BOTTOM_RIGHT_BACK].y.toFloat()
+                    endX = coordinates[TOP_RIGHT_BACK].x.toFloat()
+                    endY = coordinates[TOP_RIGHT_BACK].y.toFloat()
+                }
+                gradient = LinearGradient(
+                    startX,
+                    startY,
+                    endX,
+                    endY,
+                    paint.color,
+                    getInverseColor(paint.color),
+                    Shader.TileMode.CLAMP
+                )
+                paint.shader = gradient
                 drawPath(
                     canvas,
                     it.key.map { point ->
@@ -989,66 +1024,6 @@ class MyView(context: Context?) : View(context, null) {
                 )
             }
         }
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[TOP_LEFT_BACK],
-//                cubeVertices[TOP_RIGHT_BACK],
-//                cubeVertices[BOTTOM_RIGHT_BACK],
-//                cubeVertices[BOTTOM_LEFT_BACK]
-//            ),
-//            paint
-//        )
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[TOP_LEFT_BACK],
-//                cubeVertices[TOP_LEFT_FRONT],
-//                cubeVertices[BOTTOM_LEFT_FRONT],
-//                cubeVertices[BOTTOM_LEFT_BACK]
-//            ),
-//            paint
-//        )
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[TOP_LEFT_BACK],
-//                cubeVertices[TOP_RIGHT_BACK],
-//                cubeVertices[TOP_RIGHT_FRONT],
-//                cubeVertices[TOP_RIGHT_BACK]
-//            ),
-//            paint
-//        )
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[TOP_RIGHT_BACK],
-//                cubeVertices[TOP_RIGHT_FRONT],
-//                cubeVertices[BOTTOM_RIGHT_FRONT],
-//                cubeVertices[BOTTOM_RIGHT_BACK]
-//            ),
-//            paint
-//        )
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[BOTTOM_LEFT_BACK],
-//                cubeVertices[BOTTOM_RIGHT_BACK],
-//                cubeVertices[BOTTOM_RIGHT_FRONT],
-//                cubeVertices[BOTTOM_LEFT_FRONT]
-//            ),
-//            paint
-//        )
-//        drawPath(
-//            canvas,
-//            arrayOf(
-//                cubeVertices[TOP_LEFT_FRONT],
-//                cubeVertices[TOP_RIGHT_FRONT],
-//                cubeVertices[BOTTOM_RIGHT_FRONT],
-//                cubeVertices[BOTTOM_LEFT_FRONT]
-//            ),
-//            paint
-//        )
     }
 
     private fun drawPath(
@@ -1067,6 +1042,18 @@ class MyView(context: Context?) : View(context, null) {
         canvas.drawPath(path, paint)
         canvas.drawPath(path, bodyBorderPaint)
     }
+
+    private fun getInverseColor(color: Int): Int {
+        val red = Color.red(color)
+        val green = Color.green(color)
+        val blue = Color.blue(color)
+        val alpha = Color.alpha(color)
+        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue)
+    }
+
+    private fun getRandomColor() = Color.rgb(
+        Random.nextInt(8, 256), Random.nextInt(8, 256), Random.nextInt(8, 256)
+    )
 
     private fun drawLinePairs(
         canvas: Canvas,
