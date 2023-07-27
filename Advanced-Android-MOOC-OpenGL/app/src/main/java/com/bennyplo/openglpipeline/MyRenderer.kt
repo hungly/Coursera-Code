@@ -9,7 +9,12 @@ import javax.microedition.khronos.opengles.GL10
 
 class MyRenderer : GLSurfaceView.Renderer {
 
-    private var mtriangle: Triangle? = null
+    private val mTriangle by lazy {
+        Triangle()
+    }
+    private val mSquare by lazy {
+        Square()
+    }
     private val mMVMatrix = FloatArray(16) //model view matrix
     private val mMVPMatrix = FloatArray(16) //model view projection matrix
     private val mModelMatrix = FloatArray(16) //model  matrix
@@ -40,7 +45,8 @@ class MyRenderer : GLSurfaceView.Renderer {
         //calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-        mtriangle!!.draw(mMVPMatrix)
+//        mTriangle.draw(mMVPMatrix)
+        mSquare.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -54,7 +60,6 @@ class MyRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
         GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        mtriangle = Triangle()
     }
 
     companion object {

@@ -7,7 +7,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class Triangle {
+class Square {
 
     private val fragmentShaderCode = "precision mediump float;varying vec4 vColor; " +
 "void main() {gl_FragColor = vColor;}"
@@ -30,13 +30,13 @@ class Triangle {
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
-            triangleVertex.size * Float.SIZE_BYTES
+            squareVertex.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(triangleVertex)
+        vertexBuffer.put(squareVertex)
         vertexBuffer.position(0)
-        vertexCount = triangleVertex.size / COORDS_PER_VERTEX
+        vertexCount = squareVertex.size / COORDS_PER_VERTEX
         // prepare shaders and OpenGL program
         val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -70,10 +70,13 @@ class Triangle {
     companion object {
         // number of coordinates per vertex in this array
         const val COORDS_PER_VERTEX = 3
-        var triangleVertex = floatArrayOf(
-            -1.0f, -1.0f, 1.0f,
+        var squareVertex = floatArrayOf(
+            1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
             1.0f, -1.0f, 1.0f,
-            0.0f, 1.0f, 1.0f
+            1.0f, -1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f,
         )
     }
 
