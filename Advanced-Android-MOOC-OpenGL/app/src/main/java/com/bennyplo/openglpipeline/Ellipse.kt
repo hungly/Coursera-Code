@@ -6,15 +6,41 @@ import com.bennyplo.openglpipeline.MyRenderer.Companion.loadShader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Ellipse {
+
+    private val ellipseVertex by lazy {
+        val angleIncrement = FULL_CIRCLE_ANGLE / RESOLUTION
+        val result = arrayListOf<Float>()
+        var rad: Float
+
+        result.add(0.0f)
+        result.add(0.0f)
+        result.add(1.0f)
+
+        var angle = 0.0
+
+        while (angle <= FULL_CIRCLE_ANGLE) {
+            rad = Math.toRadians(angle).toFloat()
+            val x = RADIUS * cos(rad)
+            val y = RADIUS * sin(rad)
+            result.add(x * X_SCALE)
+            result.add(y * Y_SCALE)
+            result.add(1.0f)
+            angle += angleIncrement
+        }
+
+        FloatArray(result.size) { result[it] }
+    }
 
     private val fragmentShaderCode = "precision mediump float;uniform vec4 vColor; " +
             "void main() {gl_FragColor = vColor;}"
 
+    private val mColorHandle: Int
     private val mMVPMatrixHandle: Int
     private val mPositionHandle: Int
-    private val mColorHandle: Int
     private val mProgram: Int
     private val vertexBuffer: FloatBuffer
 
@@ -30,13 +56,13 @@ class Ellipse {
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
-            squareVertex.size * Float.SIZE_BYTES
+            ellipseVertex.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(squareVertex)
+        vertexBuffer.put(ellipseVertex)
         vertexBuffer.position(0)
-        vertexCount = squareVertex.size / COORDS_PER_VERTEX
+        vertexCount = ellipseVertex.size / COORDS_PER_VERTEX
 
         // prepare shaders and OpenGL program
         val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
@@ -74,27 +100,24 @@ class Ellipse {
         GLES32.glUniform4fv(mColorHandle, 1, fillColor, 0)
         checkGlError("glUniform4fv")
         // Draw the triangle
-        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, vertexCount)
+        GLES32.glDrawArrays(GLES32.GL_TRIANGLE_FAN, 0, vertexCount)
 
         GLES32.glUniform4fv(mColorHandle, 1, borderColor, 0)
         checkGlError("glUniform4fv")
-        GLES32.glLineWidth(5.0f)
+        GLES32.glLineWidth(BORDER_THICKNESS)
         // Draw the border
-        GLES32.glDrawArrays(GLES32.GL_LINE_STRIP, 0, vertexCount)
+        GLES32.glDrawArrays(GLES32.GL_LINE_STRIP, 1, vertexCount)
     }
 
     companion object {
         // number of coordinates per vertex in this array
-        const val COORDS_PER_VERTEX = 3
-        const val VALUES_PER_COLOR = 4
-        var squareVertex = floatArrayOf(
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f,
-        )
+        private const val COORDS_PER_VERTEX = 3
+        private const val BORDER_THICKNESS = 5.0f
+        private const val RADIUS = 1.0f
+        private const val X_SCALE = 1.5f
+        private const val Y_SCALE = 2.5f
+        private const val RESOLUTION = 90
+        private const val FULL_CIRCLE_ANGLE = 360.0
         private val fillColor = floatArrayOf(1.0f, 0.0f, 0.0f, 1.0f)
         private val borderColor = floatArrayOf(0.0f, 1.0f, 0.0f, 1.0f)
     }

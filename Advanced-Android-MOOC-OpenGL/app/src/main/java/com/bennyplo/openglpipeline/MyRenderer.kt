@@ -58,8 +58,8 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mTriangle.draw(mMVPMatrix)
 //        mSquare.draw(mMVPMatrix)
-        mCircle.draw(mMVPMatrix)
-//        mEllipse.draw(mMVPMatrix)
+//        mCircle.draw(mMVPMatrix)
+        mEllipse.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
