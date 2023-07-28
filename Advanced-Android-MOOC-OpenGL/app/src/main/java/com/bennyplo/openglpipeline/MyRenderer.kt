@@ -3,23 +3,34 @@ package com.bennyplo.openglpipeline
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
-import android.util.Log
+import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
+@Suppress("UnusedPrivateProperty", "MagicNumber")
 class MyRenderer : GLSurfaceView.Renderer {
+
+    private val mCircle by lazy {
+        Circle()
+    }
+
+    private val mEllipse by lazy {
+        Ellipse()
+    }
+
+    private val mSquare by lazy {
+        Square()
+    }
 
     private val mTriangle by lazy {
         Triangle()
     }
-    private val mSquare by lazy {
-        Square()
-    }
-    private val mMVMatrix = FloatArray(16) //model view matrix
-    private val mMVPMatrix = FloatArray(16) //model view projection matrix
-    private val mModelMatrix = FloatArray(16) //model  matrix
-    private val mProjectionMatrix = FloatArray(16) //projection mastrix
-    private val mViewMatrix = FloatArray(16) //view matrix
+
+    private val mMVMatrix = FloatArray(MATRIX_SIZE) //model view matrix
+    private val mMVPMatrix = FloatArray(MATRIX_SIZE) //model view projection matrix
+    private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
+    private val mProjectionMatrix = FloatArray(MATRIX_SIZE) //projection matrix
+    private val mViewMatrix = FloatArray(MATRIX_SIZE) //view matrix
 
     override fun onDrawFrame(unused: GL10) {
         // Draw background color
@@ -46,7 +57,9 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mTriangle.draw(mMVPMatrix)
-        mSquare.draw(mMVPMatrix)
+//        mSquare.draw(mMVPMatrix)
+        mCircle.draw(mMVPMatrix)
+//        mEllipse.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -54,7 +67,16 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
+        Matrix.frustumM(
+            mProjectionMatrix,
+            0,
+            left,
+            ratio,
+            -1f,
+            1f,
+            1f,
+            8f
+        )
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
@@ -63,11 +85,14 @@ class MyRenderer : GLSurfaceView.Renderer {
     }
 
     companion object {
+
+        private const val MATRIX_SIZE = 16
+
         @JvmStatic
         fun checkGlError(glOperation: String) {
             var error: Int
             if (GLES32.glGetError().also { error = it } != GLES32.GL_NO_ERROR) {
-                Log.e("MyRenderer", "$glOperation: glError $error")
+                Timber.e("$glOperation: glError $error")
             }
         }
 

@@ -47,7 +47,7 @@ class Square {
         GLES32.glUseProgram(mProgram) // Add program to OpenGL environment
         // get handle to vertex shader's vPosition member
         mPositionHandle = GLES32.glGetAttribLocation(mProgram, "aVertexPosition")
-        // Enable a handle to the triangle vertices
+        // Enable a handle to the square vertices
         GLES32.glEnableVertexAttribArray(mPositionHandle)
         // get handle to shape's transformation matrix
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
@@ -60,17 +60,21 @@ class Square {
         checkGlError("glUniformMatrix4fv")
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
-            mPositionHandle, COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT, false, vertexStride, vertexBuffer
+            mPositionHandle,
+            COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            vertexStride,
+            vertexBuffer
         )
-        // Draw the triangle
+        // Draw the square
         GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, vertexCount)
     }
 
     companion object {
         // number of coordinates per vertex in this array
-        const val COORDS_PER_VERTEX = 3
-        var squareVertex = floatArrayOf(
+        private const val COORDS_PER_VERTEX = 3
+        private val squareVertex = floatArrayOf(
             1.0f, 1.0f, 1.0f,
             -1.0f, 1.0f, 1.0f,
             1.0f, -1.0f, 1.0f,

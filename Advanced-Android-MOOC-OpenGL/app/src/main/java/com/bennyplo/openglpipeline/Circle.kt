@@ -6,12 +6,15 @@ import com.bennyplo.openglpipeline.MyRenderer.Companion.loadShader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import kotlin.math.cos
+import kotlin.math.sin
 
-class Triangle {
+class Circle {
 
     private val fragmentShaderCode = "precision mediump float;varying vec4 vColor; " +
-"void main() {gl_FragColor = vColor;}"
+            "void main() {gl_FragColor = vColor;}"
 
+    private val mColorHandle: Int
     private val mMVPMatrixHandle: Int
     private val mPositionHandle: Int
     private val mProgram: Int
@@ -27,16 +30,40 @@ class Triangle {
 
     private val vertexStride = COORDS_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
 
+    private val circleVertex by lazy {
+        val angleIncrement = FULL_CIRCLE_ANGLE / RESOLUTION
+        val result = arrayListOf<Float>()
+        var rad: Float
+
+        result.add(0.0f)
+        result.add(0.0f)
+        result.add(1.0f)
+
+        var angle = 0.0
+
+        while (angle <= FULL_CIRCLE_ANGLE) {
+            rad = Math.toRadians(angle).toFloat()
+            val x = RADIUS * cos(rad)
+            val y = RADIUS * sin(rad)
+            result.add(x)
+            result.add(y)
+            result.add(1.0f)
+            angle += angleIncrement
+        }
+
+        FloatArray(result.size) { result[it] }
+    }
+
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
-            triangleVertex.size * Float.SIZE_BYTES
+            circleVertex.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(triangleVertex)
+        vertexBuffer.put(circleVertex)
         vertexBuffer.position(0)
-        vertexCount = triangleVertex.size / COORDS_PER_VERTEX
+        vertexCount = circleVertex.size / COORDS_PER_VERTEX
         // prepare shaders and OpenGL program
         val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -47,10 +74,12 @@ class Triangle {
         GLES32.glUseProgram(mProgram) // Add program to OpenGL environment
         // get handle to vertex shader's vPosition member
         mPositionHandle = GLES32.glGetAttribLocation(mProgram, "aVertexPosition")
-        // Enable a handle to the triangle vertices
+        // Enable a handle to the circle vertices
         GLES32.glEnableVertexAttribArray(mPositionHandle)
         // get handle to shape's transformation matrix
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
+        checkGlError("glGetUniformLocation")
+        mColorHandle = GLES32.glGetUniformLocation(mProgram, "vColor")
         checkGlError("glGetUniformLocation")
     }
 
@@ -67,18 +96,16 @@ class Triangle {
             vertexStride,
             vertexBuffer
         )
-        // Draw the triangle
-        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, vertexCount)
+        // Draw the circle
+        GLES32.glDrawArrays(GLES32.GL_TRIANGLE_FAN, 0, vertexCount)
     }
 
     companion object {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
-        private val triangleVertex = floatArrayOf(
-            -1.0f, -1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
-            0.0f, 1.0f, 1.0f
-        )
+        private const val RADIUS = 1.0f
+        private const val RESOLUTION = 90
+        private const val FULL_CIRCLE_ANGLE = 360.0
     }
 
 }
