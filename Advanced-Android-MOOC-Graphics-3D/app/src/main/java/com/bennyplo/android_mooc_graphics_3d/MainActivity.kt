@@ -15,4 +15,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(mMyView)
     }
 
+    override fun onResume() {
+        super.onResume()
+        mMyView?.startRender()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mMyView?.stopRender()
+    }
 }

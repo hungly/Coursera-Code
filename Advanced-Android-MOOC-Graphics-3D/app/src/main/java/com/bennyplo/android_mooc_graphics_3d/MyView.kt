@@ -3,143 +3,816 @@ package com.bennyplo.android_mooc_graphics_3d
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Shader
+import android.util.Log
 import android.view.View
+import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tan
+import kotlin.random.Random
 
 class MyView(context: Context?) : View(context, null) {
 
-    private var drawCubeVertices //the vertices for drawing a 3D cube
-            : Array<Coordinate?> = arrayOfNulls(0)
+    private val cubeVertices: Array<Coordinate> by lazy {
+        arrayOf(
+            Coordinate(-1.0, -1.0, -1.0, 1.0),
+            Coordinate(-1.0, -1.0, 1.0, 1.0),
+            Coordinate(-1.0, 1.0, -1.0, 1.0),
+            Coordinate(-1.0, 1.0, 1.0, 1.0),
+            Coordinate(1.0, -1.0, -1.0, 1.0),
+            Coordinate(1.0, -1.0, 1.0, 1.0),
+            Coordinate(1.0, 1.0, -1.0, 1.0),
+            Coordinate(1.0, 1.0, 1.0, 1.0),
+        )
+    }
 
-    private val cubeVertices //the vertices of a 3D cube
-            : Array<Coordinate?>
+    private val headVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 100.0, 100.0, 100.0)
+    }
 
-    private val redPaint //paint object for drawing the lines
-            : Paint
+    private val neckVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 50.0, 25.0, 50.0)
+    }
+
+    private val chestVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 200.0, 175.0, 100.0)
+    }
+
+    private val hipVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 175.0, 100.0, 100.0)
+    }
+
+    private val uLeftArmVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 50.0, 150.0, 50.0)
+    }
+
+    private val lLeftArmVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 50.0, 125.0, 50.0)
+    }
+
+    private val leftHandVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 40.0, 40.0, 60.0)
+    }
+
+    private val uRightArmVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 50.0, 150.0, 50.0)
+    }
+
+    private val lRightArmVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 50.0, 125.0, 50.0)
+    }
+
+    private val rightHandVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 40.0, 40.0, 60.0)
+    }
+
+    private val uLeftLegVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 175.0, 75.0)
+    }
+
+    private val lLeftLegVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 175.0, 75.0)
+    }
+
+    private val leftFootVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 50.0, 150.0)
+    }
+
+    private val uRightLegVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 175.0, 75.0)
+    }
+
+    private val lRightLegVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 175.0, 75.0)
+    }
+
+    private val rightFootVertices: Array<Coordinate> by lazy {
+        scale(cubeVertices, 75.0, 50.0, 150.0)
+    }
+
+    private val fpsPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            textSize = 25F
+            isDither = true
+        }
+    }
+
+    private val bodyBorderPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.BLACK
+            strokeWidth = 2f
+            isDither = true
+        }
+    }
+
+    private val headPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val neckPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val chestPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val hipPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val uArmPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val lArmPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val handPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val uLegPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val lLegPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val footPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = getRandomColor()
+            isDither = true
+        }
+    }
+
+    private val paints by lazy {
+        arrayOf(
+            headPaint,
+            neckPaint,
+            chestPaint,
+            hipPaint,
+            uArmPaint,
+            lArmPaint,
+            handPaint,
+            uArmPaint,
+            lArmPaint,
+            handPaint,
+            uLegPaint,
+            lLegPaint,
+            footPaint,
+            uLegPaint,
+            lLegPaint,
+            footPaint,
+        )
+    }
+
+    private val baseAndroid by lazy {
+        arrayOf(
+            headVertices.map { it.copy() }.toTypedArray(),
+            neckVertices.map { it.copy() }.toTypedArray(),
+            chestVertices.map { it.copy() }.toTypedArray(),
+            hipVertices.map { it.copy() }.toTypedArray(),
+            uLeftArmVertices.map { it.copy() }.toTypedArray(),
+            lLeftArmVertices.map { it.copy() }.toTypedArray(),
+            leftHandVertices.map { it.copy() }.toTypedArray(),
+            uRightArmVertices.map { it.copy() }.toTypedArray(),
+            lRightArmVertices.map { it.copy() }.toTypedArray(),
+            rightHandVertices.map { it.copy() }.toTypedArray(),
+            uLeftLegVertices.map { it.copy() }.toTypedArray(),
+            lLeftLegVertices.map { it.copy() }.toTypedArray(),
+            leftFootVertices.map { it.copy() }.toTypedArray(),
+            uRightLegVertices.map { it.copy() }.toTypedArray(),
+            lRightLegVertices.map { it.copy() }.toTypedArray(),
+            rightFootVertices.map { it.copy() }.toTypedArray(),
+        )
+    }
+
+    private var frameCount = 0
+    private var lastFrameCount = 0L
+    private var currentTime = System.currentTimeMillis()
+    private var fps = ""
+
+    private val drawAndroid by lazy {
+        Array(baseAndroid.size) {
+            it to (baseAndroid[it] to intArrayOf())
+        }
+    }
+
+    private var isCalculating = false
+    private var isDrawing = false
+
+    private var angle = 0.0
+    private var angleDirection = Y_ROTATION_CHANGE
+    private var androidHeight = 0.0
+    private var xTranslationValue = 0.0
+    private var yTranslationValue = 0.0
+    private var normalLowestPointOfFoot = 0.0
+
+    private var headAngle = 0.0
+    private var headNodDirection = HEAD_NOD_CHANGE
+
+    private var armAngle = 0.0
+
+    private var bodyAngle = 0.0
+    private var bodyRockDirection = BODY_ROCK_RATE
+
+    private var bodyTwistAngle = BODY_TWIST_LIMIT
+    private var bodyTwistDirection = BODY_TWIST_RATE
+
+    private var bodyXMovement = 0.0
+    private var bodyXDirection = BODY_X_MOVEMENT_RATE
+
+    private var upperLegBendAngle = UPPER_LEG_BEND_LOWER_LIMIT
+    private var upperLegBendDirection = UPPER_LEG_BEND_RATE
+
+    private var lowerLegBendAngle = LOWER_LEG_BEND_LOWER_LIMIT
+    private var lowerLegBendDirection = LOWER_LEG_BEND_RATE
+
+    private var renderJob: Job? = null
+
+    private val path by lazy { Path() }
+
+    private var startX = 0F
+    private var startY = 0F
+    private var endX = 0F
+    private var endY = 0F
+
+    private lateinit var gradient: LinearGradient
 
     init {
-        val thisView = this
-        //create the paint object
-        redPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        redPaint.style = Paint.Style.STROKE //Stroke
-        redPaint.color = Color.RED
-        redPaint.strokeWidth = 2f
-        //create a 3D cube
-        cubeVertices = arrayOfNulls(8)
-        cubeVertices[0] = Coordinate(-1.0, -1.0, -1.0, 1.0)
-        cubeVertices[1] = Coordinate(-1.0, -1.0, 1.0, 1.0)
-        cubeVertices[2] = Coordinate(-1.0, 1.0, -1.0, 1.0)
-        cubeVertices[3] = Coordinate(-1.0, 1.0, 1.0, 1.0)
-        cubeVertices[4] = Coordinate(1.0, -1.0, -1.0, 1.0)
-        cubeVertices[5] = Coordinate(1.0, -1.0, 1.0, 1.0)
-        cubeVertices[6] = Coordinate(1.0, 1.0, -1.0, 1.0)
-        cubeVertices[7] = Coordinate(1.0, 1.0, 1.0, 1.0)
-//        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, 2.0)
-//        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
 
-//        drawCubeVertices = rotate(drawCubeVertices, null, 45.0, null)
-//        drawCubeVertices = rotate(drawCubeVertices, 45.0, null, null)
-//        drawCubeVertices = rotate(drawCubeVertices, null, null, 80.0)
-//        drawCubeVertices = rotate(drawCubeVertices, null, 30.0, null)
+        viewTreeObserver.addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                viewTreeObserver.removeOnGlobalLayoutListener(this)
 
-//        thisView.invalidate() //update the view
+                // Animation loop
+                CoroutineScope((Dispatchers.Default)).launch {
+                    do {
+                        delay(5)
+                        if (isCalculating.not()) {
+                            withContext(Dispatchers.Default) {
+                                isCalculating = true
 
-//        var temp = arrayOfNulls<Coordinate?>(0)
-//        var angle = 45.0
-//        val frameTime = 1000L / 120L
-//        val degreePerFrame = 50.0 / 1000 * frameTime
-//        var isCalculating = false
-//        CoroutineScope(Dispatchers.Default).launch {
-//            do {
-//                delay(frameTime)
-//
-//                isCalculating = true
-//                temp = translate(cubeVertices, 2.0, 2.0, 2.0)
-//                temp = scale(temp, 40.0, 40.0, 40.0)
-//
-//                temp = quaternionRotate(temp, intArrayOf(0, 1, 1), angle)
-//
-//                temp = translate(temp, 200.0, 200.0, 0.0)
-//                isCalculating = false
-//
-//                angle += degreePerFrame
-//                angle = if (angle >= 360) 0.0 else angle
-//            } while (true)
-//        }
-//        CoroutineScope((Dispatchers.Default)).launch {
-//            while (true) {
-//                delay(frameTime)
-//                if (isCalculating.not()) {
-//                    drawCubeVertices = temp
-//                    thisView.invalidate() //update the view
-//                }
-//            }
-//        }
+                                currentTime = System.currentTimeMillis()
+                                if (currentTime - lastFrameCount > 1000) {
+                                    val t =
+                                        frameCount.toDouble() / (currentTime - lastFrameCount) * 1000
+                                    fps = String.format("FPS: %.1f", t)
+                                    frameCount = 0
+                                    lastFrameCount = currentTime
+                                }
 
-        drawCubeVertices = translate(cubeVertices, 2.0, 2.0, -2.0)
-        drawCubeVertices = perspectiveProjection(
-            drawCubeVertices,
-            100.0,
-            doubleArrayOf(-1.0, -1.0, 1.0, 1.0, 1.0, 1.1)
-        )
-        drawCubeVertices = scale(drawCubeVertices, 40.0, 40.0, 40.0)
-        drawCubeVertices = translate(drawCubeVertices, 200.0, 200.0, 0.0)
-        thisView.invalidate()
+                                // Reset part position
+                                var temp = resetParts()
+
+                                temp = headNod(temp)
+
+                                temp[UPPER_LEFT_ARM] = quaternionRotate(
+                                    temp[UPPER_LEFT_ARM],
+                                    intArrayOf(1, 0, 0),
+                                    -80.0
+                                )
+                                temp[LOWER_LEFT_ARM] = quaternionRotate(
+                                    temp[LOWER_LEFT_ARM],
+                                    intArrayOf(0, 0, 1),
+                                    -110.0
+                                )
+                                temp[LEFT_HAND] =
+                                    quaternionRotate(temp[LEFT_HAND], intArrayOf(0, 0, 1), -110.0)
+
+                                temp[UPPER_RIGHT_ARM] = quaternionRotate(
+                                    temp[UPPER_RIGHT_ARM],
+                                    intArrayOf(1, 0, 0),
+                                    -80.0
+                                )
+                                temp[LOWER_RIGHT_ARM] = quaternionRotate(
+                                    temp[LOWER_RIGHT_ARM],
+                                    intArrayOf(0, 0, 1),
+                                    110.0
+                                )
+                                temp[RIGHT_HAND] =
+                                    quaternionRotate(temp[RIGHT_HAND], intArrayOf(0, 0, 1), 110.0)
+
+                                temp[LOWER_LEFT_ARM] = rotateArm(temp[LOWER_LEFT_ARM], 0.0)
+                                temp[LEFT_HAND] = rotateArm(temp[LEFT_HAND], 0.0)
+
+                                temp[LOWER_RIGHT_ARM] = rotateArm(temp[LOWER_RIGHT_ARM], 180.0)
+                                temp[RIGHT_HAND] = rotateArm(temp[RIGHT_HAND], 180.0)
+
+                                temp[CHEST] = bodyRock(temp[CHEST])
+                                temp[CHEST] = bodyTwist(temp[CHEST])
+
+                                temp[UPPER_LEFT_LEG] = upperLegMovement(temp[UPPER_LEFT_LEG])
+                                temp[LOWER_LEFT_LEG] = lowerLegMovement(temp[LOWER_LEFT_LEG])
+
+                                temp[UPPER_RIGHT_LEG] = upperLegMovement(temp[UPPER_RIGHT_LEG])
+                                temp[LOWER_RIGHT_LEG] = lowerLegMovement(temp[LOWER_RIGHT_LEG])
+
+                                temp[UPPER_LEFT_LEG] = quaternionRotate(
+                                    temp[UPPER_LEFT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+                                temp[LOWER_LEFT_LEG] = quaternionRotate(
+                                    temp[LOWER_LEFT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+                                temp[LEFT_FOOT] = quaternionRotate(
+                                    temp[LEFT_FOOT],
+                                    intArrayOf(0, 1, 0),
+                                    50.0
+                                )
+
+                                temp[UPPER_RIGHT_LEG] = quaternionRotate(
+                                    temp[UPPER_RIGHT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+                                temp[LOWER_RIGHT_LEG] = quaternionRotate(
+                                    temp[LOWER_RIGHT_LEG],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+                                temp[RIGHT_FOOT] = quaternionRotate(
+                                    temp[RIGHT_FOOT],
+                                    intArrayOf(0, 1, 0),
+                                    -50.0
+                                )
+
+                                temp = positionParts(temp)
+
+                                temp = upperBodyXMove(temp)
+
+                                temp = rotateAndroid(temp)
+//                                temp.forEachIndexed { index, coordinates ->
+//                                    temp[index] =
+//                                        quaternionRotate(coordinates, intArrayOf(0, 1, 0), 30.0)
+//                                    temp[index] =
+//                                        quaternionRotate(temp[index], intArrayOf(1, 0, 0), 10.0)
+//                                }
+
+                                temp = positionAndroid(temp)
+
+                                val t = orderVertices(markInVisibleFace(temp))
+
+                                updateDrawBuffer(t)
+
+                                isCalculating = false
+                            }
+                        }
+                    } while (true)
+                }
+            }
+        })
+    }
+
+    fun stopRender() {
+        renderJob?.cancel()
+    }
+
+    fun startRender() {
+        // Render loop
+        renderJob?.cancel()
+        renderJob = CoroutineScope((Dispatchers.Default)).launch {
+            do {
+                delay(FRAME_TIME)
+                // Skip frame?
+                if (isCalculating.not() && isDrawing.not()) {
+                    withContext(Dispatchers.Default) {
+                        isDrawing = true
+                        invalidate()
+                        frameCount++
+                        isDrawing = false
+                    }
+                }
+            } while (true)
+        }
+    }
+
+    private fun markInVisibleFace(partVertices: Array<Array<Coordinate>>): Array<Pair<Array<Coordinate>, IntArray>> {
+        val invisibleFaces = arrayListOf<Int>()
+        var backMostPoint: Coordinate
+        return partVertices.map { coordinates ->
+            invisibleFaces.clear()
+            backMostPoint = coordinates.maxBy { coordinate -> coordinate.z }
+            coordinates.filter { coordinate ->
+                coordinate.z.toInt() == backMostPoint.z.toInt()
+            }.map {
+                coordinates.indexOf(it)
+            }.forEach { point ->
+                FACES_MAP.keys.forEach {
+                    if (it.contains(point)) {
+                        invisibleFaces.add(FACES_MAP[it]!!)
+                    }
+                }
+            }
+            coordinates to invisibleFaces.toIntArray()
+        }.toTypedArray()
+    }
+
+    private fun orderVertices(partVertices: Array<Pair<Array<Coordinate>, IntArray>>): Map<Int, Pair<Array<Coordinate>, IntArray>> {
+        val result = hashMapOf<Int, Pair<Array<Coordinate>, IntArray>>()
+        partVertices.forEachIndexed { index, coordinates ->
+            result[index] = coordinates
+        }
+        val t = result.toList().sortedByDescending {
+            it.second.first.minOf { coordinate -> coordinate.z }
+        }.toMap()
+        return t
+    }
+
+    private fun positionAndroid(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        if (yTranslationValue == 0.0) {
+            yTranslationValue = (height.toDouble() - androidHeight) / 2
+        }
+
+        if (xTranslationValue == 0.0) {
+            xTranslationValue = (width / 2).toDouble()
+        }
+
+        val lowestPointOfFoots =
+            max(
+                calculateBottomCenter(partVertices[LEFT_FOOT]).y,
+                calculateBottomCenter(partVertices[RIGHT_FOOT]).y
+            )
+        val yNormalizer = normalLowestPointOfFoot - lowestPointOfFoots
+        partVertices.forEachIndexed { index, coordinates ->
+            partVertices[index] =
+                translate(coordinates, xTranslationValue, yTranslationValue + yNormalizer, 0.0)
+        }
+
+        return partVertices
+    }
+
+    private fun updateDrawBuffer(partVertices: Map<Int, Pair<Array<Coordinate>, IntArray>>) {
+        partVertices.toList().forEachIndexed { index, pair ->
+            drawAndroid[index] = pair
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
         //draw objects on the screen
         super.onDraw(canvas)
-        drawCube(canvas) //draw a cube onto the screen
+        //draw a cube onto the screen
+        drawAndroid.forEach {
+            drawCubeAsPath(canvas, it.second, paints[it.first])
+        }
+        canvas.drawText(fps, 25F, height - 25F, fpsPaint)
+
+        Log.d("HUNG", "$drawAndroid")
     }
 
-    //*********************************
-    // Matrix and transformation functions
-    fun getIdentityMatrix(): DoubleArray { //return an 4x4 identity matrix
-        val matrix = DoubleArray(16)
-        matrix[0] = 1.0
-        matrix[1] = 0.0
-        matrix[2] = 0.0
-        matrix[3] = 0.0
-        matrix[4] = 0.0
-        matrix[5] = 1.0
-        matrix[6] = 0.0
-        matrix[7] = 0.0
-        matrix[8] = 0.0
-        matrix[9] = 0.0
-        matrix[10] = 1.0
-        matrix[11] = 0.0
-        matrix[12] = 0.0
-        matrix[13] = 0.0
-        matrix[14] = 0.0
-        matrix[15] = 1.0
-        return matrix
+    private fun rotateAndroid(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        partVertices.forEachIndexed { index, coordinates ->
+            partVertices[index] = quaternionRotate(coordinates, intArrayOf(0, 1, 0), angle)
+            partVertices[index] = quaternionRotate(partVertices[index], intArrayOf(1, 0, 0), 10.0)
+        }
+        angle += angleDirection
+        angleDirection = if (angle > Y_ROTATION_LIMIT) {
+            -Y_ROTATION_CHANGE
+        } else if (angle < -Y_ROTATION_LIMIT) {
+            Y_ROTATION_CHANGE
+        } else {
+            angleDirection
+        }
+
+        return partVertices
     }
 
-    fun transformation(
-        vertices: Array<Coordinate?>,
-        matrix: DoubleArray
-    ): Array<Coordinate?> {   //Affine transform a 3D object with vertices
-        // vertices - vertices of the 3D object.
-        // matrix - transformation matrix
-        val result = arrayOfNulls<Coordinate>(vertices.size)
-        for (i in vertices.indices) {
-            result[i] = transformation(vertices[i], matrix)
-            result[i]!!.Normalise()
+
+    private fun headNod(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        partVertices[HEAD] = quaternionRotate(partVertices[HEAD], intArrayOf(1, 0, 0), headAngle)
+        headAngle += headNodDirection
+        headNodDirection = if (headAngle > HEAD_NOD_UPPER_LIMIT) {
+            -HEAD_NOD_CHANGE
+        } else if (headAngle < HEAD_NOD_LOWER_LIMIT) {
+            HEAD_NOD_CHANGE
+        } else {
+            headNodDirection
+        }
+
+        return partVertices
+    }
+
+    private fun rotateArm(partVertices: Array<Coordinate>, offset: Double): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), armAngle + offset)
+        armAngle += ARM_ANGLE_CHANGE
+        if (armAngle > 360) {
+            armAngle = 0.0
         }
         return result
     }
 
-    fun transformation(
-        vertex: Coordinate?,
+    private fun bodyRock(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(0, 1, 0), bodyAngle)
+        bodyAngle += bodyRockDirection
+        bodyRockDirection = if (bodyAngle > BODY_ROCK_LIMIT) {
+            -BODY_ROCK_RATE
+        } else if (bodyAngle < -BODY_ROCK_LIMIT) {
+            BODY_ROCK_RATE
+        } else {
+            bodyRockDirection
+        }
+        return result
+    }
+
+    private fun bodyTwist(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(0, 0, 1), bodyTwistAngle)
+        bodyTwistAngle += bodyTwistDirection
+        bodyTwistDirection = if (bodyTwistAngle > BODY_TWIST_LIMIT) {
+            -BODY_TWIST_RATE
+        } else if (bodyTwistAngle < -BODY_TWIST_LIMIT) {
+            BODY_TWIST_RATE
+        } else {
+            bodyTwistDirection
+        }
+        return result
+    }
+
+    private fun upperBodyXMove(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        partVertices[HEAD] = translate(partVertices[HEAD], bodyXMovement, 0.0, 0.0)
+        partVertices[NECK] = translate(partVertices[NECK], bodyXMovement, 0.0, 0.0)
+        partVertices[CHEST] = translate(partVertices[CHEST], bodyXMovement, 0.0, 0.0)
+
+        partVertices[UPPER_LEFT_ARM] =
+            translate(partVertices[UPPER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_LEFT_ARM] =
+            translate(partVertices[LOWER_LEFT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LEFT_HAND] = translate(partVertices[LEFT_HAND], bodyXMovement, 0.0, 0.0)
+
+        partVertices[UPPER_RIGHT_ARM] =
+            translate(partVertices[UPPER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[LOWER_RIGHT_ARM] =
+            translate(partVertices[LOWER_RIGHT_ARM], bodyXMovement, 0.0, 0.0)
+        partVertices[RIGHT_HAND] = translate(partVertices[RIGHT_HAND], bodyXMovement, 0.0, 0.0)
+
+        bodyXMovement += bodyXDirection
+        bodyXDirection = if (bodyXMovement > BODY_X_MOVEMENT_LIMIT) {
+            -BODY_X_MOVEMENT_RATE
+        } else if (bodyXMovement < -BODY_X_MOVEMENT_LIMIT) {
+            BODY_X_MOVEMENT_RATE
+        } else {
+            bodyXDirection
+        }
+        return partVertices
+    }
+
+    private fun upperLegMovement(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), -upperLegBendAngle)
+        upperLegBendAngle += upperLegBendDirection
+        upperLegBendDirection = if (upperLegBendAngle > UPPER_LEG_BEND_UPPER_LIMIT) {
+            -UPPER_LEG_BEND_RATE
+        } else if (upperLegBendAngle < UPPER_LEG_BEND_LOWER_LIMIT) {
+            UPPER_LEG_BEND_RATE
+        } else {
+            upperLegBendDirection
+        }
+        return result
+    }
+
+    private fun lowerLegMovement(partVertices: Array<Coordinate>): Array<Coordinate> {
+        val result = quaternionRotate(partVertices, intArrayOf(1, 0, 0), lowerLegBendAngle)
+        lowerLegBendAngle += lowerLegBendDirection
+        lowerLegBendDirection = if (lowerLegBendAngle > LOWER_LEG_BEND_UPPER_LIMIT) {
+            -LOWER_LEG_BEND_RATE
+        } else if (lowerLegBendAngle < LOWER_LEG_BEND_LOWER_LIMIT) {
+            LOWER_LEG_BEND_RATE
+        } else {
+            lowerLegBendDirection
+        }
+        return result
+    }
+
+    private fun resetParts() = baseAndroid.map { coordinates ->
+        coordinates.map { coordinate ->
+            coordinate.copy()
+        }.toTypedArray()
+    }.toTypedArray()
+
+    private fun positionParts(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> {
+        val headBase = calculateBottomCenter(partVertices[HEAD])
+        partVertices[HEAD] = translate(partVertices[HEAD], -headBase.x, -headBase.y, -headBase.z)
+        partVertices[NECK] = alignTopBottom(partVertices[HEAD], partVertices[NECK])
+        partVertices[CHEST] = alignTopBottom(partVertices[NECK], partVertices[CHEST])
+        partVertices[HIP] = alignTopBottom(partVertices[CHEST], partVertices[HIP])
+
+        partVertices[UPPER_LEFT_ARM] =
+            alignArmToBody(partVertices[CHEST], partVertices[UPPER_LEFT_ARM], true)
+        partVertices[LOWER_LEFT_ARM] =
+            alignTopBottom(partVertices[UPPER_LEFT_ARM], partVertices[LOWER_LEFT_ARM])
+        partVertices[LEFT_HAND] =
+            alignTopBottom(partVertices[LOWER_LEFT_ARM], partVertices[LEFT_HAND])
+
+        partVertices[UPPER_RIGHT_ARM] =
+            alignArmToBody(partVertices[CHEST], partVertices[UPPER_RIGHT_ARM], false)
+        partVertices[LOWER_RIGHT_ARM] =
+            alignTopBottom(partVertices[UPPER_RIGHT_ARM], partVertices[LOWER_RIGHT_ARM])
+        partVertices[RIGHT_HAND] =
+            alignTopBottom(partVertices[LOWER_RIGHT_ARM], partVertices[RIGHT_HAND])
+
+        partVertices[UPPER_LEFT_LEG] =
+            alignTopBottom(partVertices[HIP], partVertices[UPPER_LEFT_LEG], -100.0)
+        partVertices[LOWER_LEFT_LEG] =
+            alignTopBottom(partVertices[UPPER_LEFT_LEG], partVertices[LOWER_LEFT_LEG])
+        partVertices[LEFT_FOOT] =
+            alignTopBottom(
+                partVertices[LOWER_LEFT_LEG],
+                partVertices[LEFT_FOOT],
+                zOffset = -FOOT_Z_OFFSET
+            )
+
+        partVertices[UPPER_RIGHT_LEG] =
+            alignTopBottom(partVertices[HIP], partVertices[UPPER_RIGHT_LEG], 100.0)
+        partVertices[LOWER_RIGHT_LEG] =
+            alignTopBottom(partVertices[UPPER_RIGHT_LEG], partVertices[LOWER_RIGHT_LEG])
+        partVertices[RIGHT_FOOT] =
+            alignTopBottom(
+                partVertices[LOWER_RIGHT_LEG],
+                partVertices[RIGHT_FOOT],
+                zOffset = -FOOT_Z_OFFSET
+            )
+
+        if (normalLowestPointOfFoot == 0.0) {
+            normalLowestPointOfFoot = max(
+                calculateBottomCenter(partVertices[LEFT_FOOT]).y,
+                calculateBottomCenter(partVertices[RIGHT_FOOT]).y
+            )
+        }
+        if (androidHeight == 0.0) {
+            androidHeight = normalLowestPointOfFoot - calculateTopCenter(partVertices[HEAD]).y
+        }
+
+        return partVertices
+    }
+
+    private fun alignTopBottom(
+        parent: Array<Coordinate>,
+        child: Array<Coordinate>,
+        xOffset: Double = 0.0,
+        zOffset: Double = 0.0
+    ): Array<Coordinate> {
+        val parentBottomCenter = calculateBottomCenter(parent)
+        val childTopCenter = calculateTopCenter(child)
+        val childBottomCenter = calculateBottomCenter(child)
+        return translate(
+            child,
+            parentBottomCenter.x - childTopCenter.x + xOffset,
+            parentBottomCenter.y + childTopCenter.y + (childBottomCenter.y - childTopCenter.y),
+            parentBottomCenter.z - childTopCenter.z + zOffset
+        )
+    }
+
+    private fun alignArmToBody(
+        body: Array<Coordinate>,
+        arm: Array<Coordinate>,
+        leftSide: Boolean
+    ): Array<Coordinate> {
+        val bodyTopCenter = calculateTopCenter(body)
+        val armTopCenter = calculateTopCenter(arm)
+        val armWidth = calculateRightCenter(arm).x - calculateLeftCenter(arm).x
+        val bodySideCenter: Coordinate
+        val armSideCenter: Coordinate
+        val x = if (leftSide) {
+            bodySideCenter = calculateLeftCenter(body)
+            armSideCenter = calculateRightCenter(arm)
+            armSideCenter.x + bodySideCenter.x - armWidth
+        } else {
+            bodySideCenter = calculateRightCenter(body)
+            armSideCenter = calculateLeftCenter(arm)
+            armSideCenter.x + bodySideCenter.x + armWidth
+        }
+        return translate(
+            arm,
+            x,
+            bodyTopCenter.y - armTopCenter.y,
+            bodyTopCenter.z - armTopCenter.z
+        )
+    }
+
+    private fun calculateBottomCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[BOTTOM_RIGHT_BACK].x + vertices[BOTTOM_RIGHT_FRONT].x + vertices[BOTTOM_LEFT_BACK].x + vertices[BOTTOM_LEFT_FRONT].x) / 4,
+        (vertices[BOTTOM_RIGHT_BACK].y + vertices[BOTTOM_RIGHT_FRONT].y + vertices[BOTTOM_LEFT_BACK].y + vertices[BOTTOM_LEFT_FRONT].y) / 4,
+        (vertices[BOTTOM_RIGHT_BACK].z + vertices[BOTTOM_RIGHT_FRONT].z + vertices[BOTTOM_LEFT_BACK].z + vertices[BOTTOM_LEFT_FRONT].z) / 4,
+        1.0
+    )
+
+    private fun calculateTopCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[TOP_RIGHT_BACK].x + vertices[TOP_RIGHT_FRONT].x + vertices[TOP_LEFT_BACK].x + vertices[TOP_LEFT_FRONT].x) / 4,
+        (vertices[TOP_RIGHT_BACK].y + vertices[TOP_RIGHT_FRONT].y + vertices[TOP_LEFT_BACK].y + vertices[TOP_LEFT_FRONT].y) / 4,
+        (vertices[TOP_RIGHT_BACK].z + vertices[TOP_RIGHT_FRONT].z + vertices[TOP_LEFT_BACK].z + vertices[TOP_LEFT_FRONT].z) / 4,
+        1.0
+    )
+
+    private fun calculateLeftCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[TOP_LEFT_FRONT].x + vertices[TOP_LEFT_BACK].x + vertices[BOTTOM_LEFT_FRONT].x + vertices[BOTTOM_LEFT_BACK].x) / 4,
+        (vertices[TOP_LEFT_FRONT].y + vertices[TOP_LEFT_BACK].y + vertices[BOTTOM_LEFT_FRONT].y + vertices[BOTTOM_LEFT_BACK].y) / 4,
+        (vertices[TOP_LEFT_FRONT].z + vertices[TOP_LEFT_BACK].z + vertices[BOTTOM_LEFT_FRONT].z + vertices[BOTTOM_LEFT_BACK].z) / 4,
+        1.0
+    )
+
+    private fun calculateRightCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[TOP_RIGHT_FRONT].x + vertices[TOP_RIGHT_BACK].x + vertices[BOTTOM_RIGHT_FRONT].x + vertices[BOTTOM_RIGHT_BACK].x) / 4,
+        (vertices[TOP_RIGHT_FRONT].y + vertices[TOP_RIGHT_BACK].y + vertices[BOTTOM_RIGHT_FRONT].y + vertices[BOTTOM_RIGHT_BACK].y) / 4,
+        (vertices[TOP_RIGHT_FRONT].z + vertices[TOP_RIGHT_BACK].z + vertices[BOTTOM_RIGHT_FRONT].z + vertices[BOTTOM_RIGHT_BACK].z) / 4,
+        1.0
+    )
+
+    private fun calculateFrontCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[TOP_RIGHT_FRONT].x + vertices[TOP_LEFT_FRONT].x + vertices[BOTTOM_RIGHT_FRONT].x + vertices[BOTTOM_LEFT_FRONT].x) / 4,
+        (vertices[TOP_RIGHT_FRONT].y + vertices[TOP_LEFT_FRONT].y + vertices[BOTTOM_RIGHT_FRONT].y + vertices[BOTTOM_LEFT_FRONT].y) / 4,
+        (vertices[TOP_RIGHT_FRONT].z + vertices[TOP_LEFT_FRONT].z + vertices[BOTTOM_RIGHT_FRONT].z + vertices[BOTTOM_LEFT_FRONT].z) / 4,
+        1.0
+    )
+
+    private fun calculateBackCenter(vertices: Array<Coordinate>): Coordinate = Coordinate(
+        (vertices[TOP_RIGHT_BACK].x + vertices[TOP_LEFT_BACK].x + vertices[BOTTOM_RIGHT_BACK].x + vertices[BOTTOM_LEFT_BACK].x) / 4,
+        (vertices[TOP_RIGHT_BACK].y + vertices[TOP_LEFT_BACK].y + vertices[BOTTOM_RIGHT_BACK].y + vertices[BOTTOM_LEFT_BACK].y) / 4,
+        (vertices[TOP_RIGHT_BACK].z + vertices[TOP_LEFT_BACK].z + vertices[BOTTOM_RIGHT_BACK].z + vertices[BOTTOM_LEFT_BACK].z) / 4,
+        1.0
+    )
+
+    //*********************************
+// Matrix and transformation functions
+    private fun getIdentityMatrix(): DoubleArray { //return an 4x4 identity matrix
+        return doubleArrayOf(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        )
+    }
+
+    private fun transformation(
+        vertices: Array<Coordinate>,
+        matrix: DoubleArray
+    ): Array<Coordinate> {   //Affine transform a 3D object with vertices
+        // vertices - vertices of the 3D object.
+        // matrix - transformation matrix
+        val result = arrayOf(*vertices)
+        for (i in vertices.indices) {
+            result[i] = transformation(vertices[i], matrix)
+            result[i].Normalise()
+        }
+        return result
+    }
+
+    private fun transformation(
+        vertex: Coordinate,
         matrix: DoubleArray
     ): Coordinate { //affine transformation with homogeneous coordinates
         //i.e. a vector (vertex) multiply with the transformation matrix
@@ -147,7 +820,7 @@ class MyView(context: Context?) : View(context, null) {
         // matrix - transformation matrix
         val result = Coordinate()
         result.x =
-            matrix[0] * vertex!!.x + matrix[1] * vertex.y + matrix[2] * vertex.z + matrix[3] * vertex.w
+            matrix[0] * vertex.x + matrix[1] * vertex.y + matrix[2] * vertex.z + matrix[3] * vertex.w
         result.y =
             matrix[4] * vertex.x + matrix[5] * vertex.y + matrix[6] * vertex.z + matrix[7] * vertex.w
         result.z =
@@ -158,13 +831,13 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //***********************************************************
-    // Affine transformation
-    fun translate(
-        vertices: Array<Coordinate?>,
+// Affine transformation
+    private fun translate(
+        vertices: Array<Coordinate>,
         tx: Double,
         ty: Double,
         tz: Double
-    ): Array<Coordinate?> {
+    ): Array<Coordinate> {
         val matrix = getIdentityMatrix()
         matrix[3] = tx
         matrix[7] = ty
@@ -173,13 +846,13 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //***********************************************************
-    // Affine rotation
+// Affine rotation
     fun rotate(
-        vertices: Array<Coordinate?>,
+        vertices: Array<Coordinate>,
         rx: Double? = null,
         ry: Double? = null,
         rz: Double? = null
-    ): Array<Coordinate?> {
+    ): Array<Coordinate> {
         var result = vertices
         var rotateMatrix: DoubleArray
         var rotateRadians: Double
@@ -214,16 +887,16 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //***********************************************************
-    // Quaternion rotation
+// Quaternion rotation
     fun quaternionRotate(
-        vertices: Array<Coordinate?>,
+        vertices: Array<Coordinate>,
         rotateAxis: IntArray,
         rotateDegree: Double
-    ): Array<Coordinate?> {
-        val result = arrayOfNulls<Coordinate>(vertices.size)
+    ): Array<Coordinate> {
+        val result = arrayOf(*vertices)
 
         vertices.forEachIndexed { index, coordinate ->
-            coordinate?.let {
+            coordinate.let {
                 result[index] = quaternionCalculate(it, rotateAxis, rotateDegree)
             }
         }
@@ -231,7 +904,7 @@ class MyView(context: Context?) : View(context, null) {
         return result
     }
 
-    fun quaternionCalculate(
+    private fun quaternionCalculate(
         vertex: Coordinate,
         rotateAxis: IntArray,
         rotateDegree: Double
@@ -269,12 +942,12 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     //***********************************************************
-    // Perspective projection
-    fun perspectiveProjection(
-        vertices: Array<Coordinate?>,
+// Perspective projection
+    private fun perspectiveProjection(
+        vertices: Array<Coordinate>,
         fovInDegree: Double,
         plane: DoubleArray
-    ): Array<Coordinate?> {
+    ): Array<Coordinate> {
         val aspectRatio = (plane[2] - plane[0]) / (plane[1] - plane[3])
         val tanA = tan(Math.toRadians(fovInDegree) / 2)
         val m = doubleArrayOf(
@@ -299,24 +972,92 @@ class MyView(context: Context?) : View(context, null) {
         return transformation(vertices, m)
     }
 
-    private fun drawCube(canvas: Canvas) { //draw a cube on the screen
-        drawLinePairs(canvas, drawCubeVertices, 0, 1, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 1, 3, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 3, 2, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 2, 0, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 4, 5, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 5, 7, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 7, 6, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 6, 4, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 0, 4, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 1, 5, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 2, 6, redPaint)
-        drawLinePairs(canvas, drawCubeVertices, 3, 7, redPaint)
+    private fun drawCube(
+        canvas: Canvas,
+        cubeVertices: Array<Coordinate>,
+        paint: Paint
+    ) { //draw a cube on the screen
+        drawLinePairs(canvas, cubeVertices, 0, 1, paint)
+        drawLinePairs(canvas, cubeVertices, 1, 3, paint)
+        drawLinePairs(canvas, cubeVertices, 3, 2, paint)
+        drawLinePairs(canvas, cubeVertices, 2, 0, paint)
+        drawLinePairs(canvas, cubeVertices, 4, 5, paint)
+        drawLinePairs(canvas, cubeVertices, 5, 7, paint)
+        drawLinePairs(canvas, cubeVertices, 7, 6, paint)
+        drawLinePairs(canvas, cubeVertices, 6, 4, paint)
+        drawLinePairs(canvas, cubeVertices, 0, 4, paint)
+        drawLinePairs(canvas, cubeVertices, 1, 5, paint)
+        drawLinePairs(canvas, cubeVertices, 2, 6, paint)
+        drawLinePairs(canvas, cubeVertices, 3, 7, paint)
     }
+
+    private fun drawCubeAsPath(
+        canvas: Canvas,
+        cubeVertices: Pair<Array<Coordinate>, IntArray>,
+        paint: Paint
+    ) {
+        path.reset()
+        FACES_MAP.forEach {
+            if (cubeVertices.second.contains(it.value).not()) {
+                cubeVertices.first.let { coordinates ->
+                    startX = coordinates[BOTTOM_RIGHT_BACK].x.toFloat()
+                    startY = coordinates[BOTTOM_RIGHT_BACK].y.toFloat()
+                    endX = coordinates[TOP_RIGHT_BACK].x.toFloat()
+                    endY = coordinates[TOP_RIGHT_BACK].y.toFloat()
+                }
+                gradient = LinearGradient(
+                    startX,
+                    startY,
+                    endX,
+                    endY,
+                    paint.color,
+                    getInverseColor(paint.color),
+                    Shader.TileMode.CLAMP
+                )
+                paint.shader = gradient
+                drawPath(
+                    canvas,
+                    it.key.map { point ->
+                        cubeVertices.first[point]
+                    }.toTypedArray(),
+                    paint
+                )
+            }
+        }
+    }
+
+    private fun drawPath(
+        canvas: Canvas,
+        cubeVertices: Array<Coordinate>,
+        paint: Paint
+    ) {
+        cubeVertices.forEachIndexed { index, coordinate ->
+            if (index == 0) {
+                path.moveTo(coordinate.x.toFloat(), coordinate.y.toFloat())
+            } else {
+                path.lineTo(coordinate.x.toFloat(), coordinate.y.toFloat())
+            }
+        }
+        path.close()
+        canvas.drawPath(path, paint)
+        canvas.drawPath(path, bodyBorderPaint)
+    }
+
+    private fun getInverseColor(color: Int): Int {
+        val red = Color.red(color)
+        val green = Color.green(color)
+        val blue = Color.blue(color)
+        val alpha = Color.alpha(color)
+        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue)
+    }
+
+    private fun getRandomColor() = Color.rgb(
+        Random.nextInt(8, 256), Random.nextInt(8, 256), Random.nextInt(8, 256)
+    )
 
     private fun drawLinePairs(
         canvas: Canvas,
-        vertices: Array<Coordinate?>,
+        vertices: Array<Coordinate>,
         start: Int,
         end: Int,
         paint: Paint
@@ -327,20 +1068,20 @@ class MyView(context: Context?) : View(context, null) {
         //end - index of the ending point
         //paint - the paint of the line
         canvas.drawLine(
-            vertices[start]!!.x.toInt().toFloat(),
-            vertices[start]!!.y.toInt().toFloat(),
-            vertices[end]!!.x.toInt().toFloat(),
-            vertices[end]!!.y.toInt().toFloat(),
+            vertices[start].x.toFloat(),
+            vertices[start].y.toFloat(),
+            vertices[end].x.toFloat(),
+            vertices[end].y.toFloat(),
             paint
         )
     }
 
     private fun scale(
-        vertices: Array<Coordinate?>,
+        vertices: Array<Coordinate>,
         sx: Double,
         sy: Double,
         sz: Double
-    ): Array<Coordinate?> {
+    ): Array<Coordinate> {
         val matrix = getIdentityMatrix()
         matrix[0] = sx
         matrix[5] = sy
@@ -348,4 +1089,107 @@ class MyView(context: Context?) : View(context, null) {
         return transformation(vertices, matrix)
     }
 
+    companion object {
+        private const val FRAME_TIME = 1000L / 120L
+
+        private const val HEAD = 0
+        private const val NECK = 1
+        private const val CHEST = 2
+        private const val HIP = 3
+        private const val UPPER_LEFT_ARM = 4
+        private const val LOWER_LEFT_ARM = 5
+        private const val LEFT_HAND = 6
+        private const val UPPER_RIGHT_ARM = 7
+        private const val LOWER_RIGHT_ARM = 8
+        private const val RIGHT_HAND = 9
+        private const val UPPER_LEFT_LEG = 10
+        private const val LOWER_LEFT_LEG = 11
+        private const val LEFT_FOOT = 12
+        private const val UPPER_RIGHT_LEG = 13
+        private const val LOWER_RIGHT_LEG = 14
+        private const val RIGHT_FOOT = 15
+
+        private const val TOP_LEFT_BACK = 0
+        private const val TOP_LEFT_FRONT = 1
+        private const val BOTTOM_LEFT_BACK = 2
+        private const val BOTTOM_LEFT_FRONT = 3
+        private const val TOP_RIGHT_BACK = 4
+        private const val TOP_RIGHT_FRONT = 5
+        private const val BOTTOM_RIGHT_BACK = 6
+        private const val BOTTOM_RIGHT_FRONT = 7
+
+        private const val FOOT_Z_OFFSET = 50.0
+
+        private const val Y_ROTATION_LIMIT = 50.0
+        private const val Y_ROTATION_CHANGE = 0.5
+
+        private const val HEAD_NOD_LOWER_LIMIT = -20.0
+        private const val HEAD_NOD_UPPER_LIMIT = 30.0
+        private const val HEAD_NOD_CHANGE = 1.0
+
+        private const val ARM_ANGLE_CHANGE = 0.75
+
+        private const val BODY_ROCK_LIMIT = 10.0
+        private const val BODY_ROCK_RATE = 0.25
+
+        private const val BODY_TWIST_LIMIT = 5.0
+        private const val BODY_TWIST_RATE = 0.1
+
+        private const val BODY_X_MOVEMENT_LIMIT = 25
+        private const val BODY_X_MOVEMENT_RATE = 0.5
+
+        private const val UPPER_LEG_BEND_UPPER_LIMIT = 75.0
+        private const val UPPER_LEG_BEND_LOWER_LIMIT = 60.0
+        private const val UPPER_LEG_BEND_RATE = 0.1
+
+        private const val LOWER_LEG_BEND_UPPER_LIMIT = 25.0
+        private const val LOWER_LEG_BEND_LOWER_LIMIT = 10.0
+        private const val LOWER_LEG_BEND_RATE = 0.1
+
+        private const val LEFT = 0
+        private const val TOP = 1
+        private const val RIGHT = 2
+        private const val BOTTOM = 3
+        private const val FRONT = 4
+        private const val BACK = 5
+
+        private val FACES_MAP = mapOf(
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_RIGHT_BACK,
+                BOTTOM_RIGHT_BACK,
+                BOTTOM_LEFT_BACK
+            ) to BACK,
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_LEFT_FRONT,
+                BOTTOM_LEFT_FRONT,
+                BOTTOM_LEFT_BACK
+            ) to LEFT,
+            arrayOf(
+                TOP_LEFT_BACK,
+                TOP_RIGHT_BACK,
+                TOP_RIGHT_FRONT,
+                TOP_LEFT_FRONT
+            ) to TOP,
+            arrayOf(
+                TOP_RIGHT_BACK,
+                TOP_RIGHT_FRONT,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_RIGHT_BACK
+            ) to RIGHT,
+            arrayOf(
+                BOTTOM_LEFT_BACK,
+                BOTTOM_RIGHT_BACK,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_LEFT_FRONT
+            ) to BOTTOM,
+            arrayOf(
+                TOP_LEFT_FRONT,
+                TOP_RIGHT_FRONT,
+                BOTTOM_RIGHT_FRONT,
+                BOTTOM_LEFT_FRONT
+            ) to FRONT,
+        )
+    }
 }
