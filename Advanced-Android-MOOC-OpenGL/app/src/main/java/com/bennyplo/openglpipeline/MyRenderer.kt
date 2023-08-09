@@ -39,6 +39,8 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
     private val mProjectionMatrix = FloatArray(MATRIX_SIZE) //projection matrix
     private val mViewMatrix = FloatArray(MATRIX_SIZE) //view matrix
+    private val mRotationMatrixZ = FloatArray(MATRIX_SIZE)
+    private val mRotationMatrixY = FloatArray(MATRIX_SIZE)
 
     override fun onDrawFrame(unused: GL10) {
         // Draw background color
@@ -53,6 +55,8 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.setIdentityM(mMVMatrix, 0) //set the model view  matrix to an identity matrix
         Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
         // Set the camera position (View matrix)
+        Matrix.setRotateM(mRotationMatrixZ, 0, 30.0f, 0.0f, 0.0f, 1.0f)
+        Matrix.setRotateM(mRotationMatrixY, 0, 30.0f, 0.0f, 1.0f, 0.0f)
         Matrix.setLookAtM(
             mViewMatrix, 0,
             0.0f, 0f, 1.0f,  //camera is at (0,0,1)
@@ -62,6 +66,8 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -5f) //move backward for 5 units
         // Calculate the projection and view transformation
         //calculate the model view matrix
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixZ, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mTriangle.draw(mMVPMatrix)
