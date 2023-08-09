@@ -6,26 +6,39 @@ import com.bennyplo.openglpipeline.MyRenderer.Companion.loadShader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import javax.microedition.khronos.opengles.GL
 
 class Pyramid {
 
-    private val fragmentShaderCode = "precision mediump float;varying vec4 vColor; " +
-"void main() {gl_FragColor = vColor;}"
+    private val fragmentShaderCode =
+        "precision mediump float;" +
+                "varying vec4 vColor; " +
+                "void main() {" +
+                "gl_FragColor = vColor;" +
+                "}"
 
     private val mMVPMatrixHandle: Int
     private val mPositionHandle: Int
+    private val mColorHandle:Int
     private val mProgram: Int
     private val vertexBuffer: FloatBuffer
+    private val colorBuffer: FloatBuffer
 
     private val vertexCount // number of vertices
             : Int
 
     private val vertexShaderCode =
-        "attribute vec3 aVertexPosition;" + "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
-                "void main() {gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
-                "vColor=vec4(1.0,0.0,0.0,1.0);}"
+        "attribute vec3 aVertexPosition;" +
+                "attribute vec4 aVertexColor;" +
+                "uniform mat4 uMVPMatrix;" +
+                "varying vec4 vColor;" +
+                "void main() {" +
+                "gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
+                "vColor=aVertexColor;" +
+                "}"
 
     private val vertexStride = COORDS_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
+    private val colorStride = COLOR_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
 
     init {
         // initialize vertex byte buffer for shape coordinates
@@ -37,6 +50,14 @@ class Pyramid {
         vertexBuffer.put(pyramidVertex)
         vertexBuffer.position(0)
         vertexCount = pyramidVertex.size / COORDS_PER_VERTEX
+        // color buffer
+        val cb = ByteBuffer.allocateDirect(
+            pyramidColor.size * Float.SIZE_BYTES
+        )
+        cb.order(ByteOrder.nativeOrder())
+        colorBuffer = cb.asFloatBuffer()
+        colorBuffer.put(pyramidColor)
+        colorBuffer.position(0)
         // prepare shaders and OpenGL program
         val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -47,8 +68,10 @@ class Pyramid {
         GLES32.glUseProgram(mProgram) // Add program to OpenGL environment
         // get handle to vertex shader's vPosition member
         mPositionHandle = GLES32.glGetAttribLocation(mProgram, "aVertexPosition")
+        mColorHandle = GLES32.glGetAttribLocation(mProgram, "aVertexColor")
         // Enable a handle to the triangle vertices
         GLES32.glEnableVertexAttribArray(mPositionHandle)
+        GLES32.glEnableVertexAttribArray(mColorHandle)
         // get handle to shape's transformation matrix
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
         checkGlError("glGetUniformLocation")
@@ -67,6 +90,14 @@ class Pyramid {
             vertexStride,
             vertexBuffer
         )
+        GLES32.glVertexAttribPointer(
+            mColorHandle,
+            COLOR_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            colorStride,
+            colorBuffer
+        )
         // Draw the triangle
         GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, vertexCount)
     }
@@ -74,6 +105,7 @@ class Pyramid {
     companion object {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
+        private const val COLOR_PER_VERTEX = 4
         private val pyramidVertex = floatArrayOf(
             // Front
             0.0f, 1.0f, 0.0f,
@@ -91,6 +123,24 @@ class Pyramid {
             0.0f, 1.0f, 0.0f,
             -1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f, 1.0f,
+        )
+        private val pyramidColor = floatArrayOf(
+            // Front
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            // Right
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            // Back
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            // Left
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, 1.0f,
         )
     }
 
