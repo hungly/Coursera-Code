@@ -34,6 +34,10 @@ class MyRenderer : GLSurfaceView.Renderer {
         Cube()
     }
 
+    private val mPentagon by lazy {
+        Pentagon()
+    }
+
     private val mMVMatrix = FloatArray(MATRIX_SIZE) //model view matrix
     private val mMVPMatrix = FloatArray(MATRIX_SIZE) //model view projection matrix
     private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
@@ -75,7 +79,8 @@ class MyRenderer : GLSurfaceView.Renderer {
 //        mCircle.draw(mMVPMatrix)
 //        mEllipse.draw(mMVPMatrix)
 //        mPyramid.draw(mMVPMatrix)
-        mCube.draw(mMVPMatrix)
+//        mCube.draw(mMVPMatrix)
+        mPentagon.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
