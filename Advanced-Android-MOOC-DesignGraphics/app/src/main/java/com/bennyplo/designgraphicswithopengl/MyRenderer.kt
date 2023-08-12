@@ -18,6 +18,9 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mCharS by lazy {
         CharacterS()
     }
+    private val mSphere by lazy {
+        Sphere()
+    }
     private val mMVMatrix = FloatArray(MATRIX_SIZE) //model view matrix
     private val mMVPMatrix = FloatArray(MATRIX_SIZE) //model view projection matrix
     private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
@@ -55,8 +58,9 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mCharA.draw(mMVPMatrix)
-        mCharV.draw(mMVPMatrix)
+//        mCharV.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
+        mSphere.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
