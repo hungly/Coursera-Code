@@ -51,11 +51,11 @@ class CharacterV {
         vertexBuffer.position(0)
         vertexCount = CharVVertex.size / COORDS_PER_VERTEX
         val cb = ByteBuffer.allocateDirect(
-            CharAColor.size * Float.SIZE_BYTES
+            CharVColor.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         cb.order(ByteOrder.nativeOrder())
         colorBuffer = cb.asFloatBuffer()
-        colorBuffer.put(CharAColor)
+        colorBuffer.put(CharVColor)
         colorBuffer.position(0)
         val ib = IntBuffer.allocate(CharIndex.size)
         indexBuffer = ib
@@ -159,7 +159,7 @@ class CharacterV {
             // Inner right
             2, 3, 8, 3, 8, 9
         )
-        private var CharAColor = floatArrayOf(
+        private var CharVColor = floatArrayOf(
             0.0f, 0.0f, 1.0f, 1.0f,  //0
             0.0f, 0.0f, 1.0f, 1.0f,  //1
             0.0f, 0.0f, 1.0f, 1.0f,  //2
