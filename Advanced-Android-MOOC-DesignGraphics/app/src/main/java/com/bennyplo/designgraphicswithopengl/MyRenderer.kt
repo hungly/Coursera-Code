@@ -24,6 +24,9 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mArbitrary by lazy {
         Arbitrary()
     }
+    private val mHalfCone by lazy {
+        HalfCone()
+    }
     private val mMVMatrix = FloatArray(MATRIX_SIZE) //model view matrix
     private val mMVPMatrix = FloatArray(MATRIX_SIZE) //model view projection matrix
     private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
@@ -64,7 +67,8 @@ class MyRenderer : GLSurfaceView.Renderer {
 //        mCharV.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
 //        mSphere.draw(mMVPMatrix)
-        mArbitrary.draw(mMVPMatrix)
+//        mArbitrary.draw(mMVPMatrix)
+        mHalfCone.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
