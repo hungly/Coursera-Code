@@ -12,6 +12,9 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mCharA by lazy {
         CharacterA()
     }
+    private val mCharM by lazy {
+        CharacterM()
+    }
     private val mCharI by lazy {
         CharacterI()
     }
@@ -58,7 +61,8 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mCharA.draw(mMVPMatrix)
-        mCharI.draw(mMVPMatrix)
+        mCharM.draw(mMVPMatrix)
+//        mCharI.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
 //        mCharV.draw(mMVPMatrix)
     }
