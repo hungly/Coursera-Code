@@ -86,7 +86,7 @@ class MyRenderer : GLSurfaceView.Renderer {
 //        mCharI.draw(mMVPMatrix)
 //        mCharL.draw(mMVPMatrix)
 //        mCharM.draw(mMVPMatrix)
-        mCharP.draw(mMVPMatrix)
+//        mCharP.draw(mMVPMatrix)
 //        mCharR.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
 //        mCharV.draw(mMVPMatrix)
