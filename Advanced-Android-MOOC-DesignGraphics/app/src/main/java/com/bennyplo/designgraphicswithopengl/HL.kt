@@ -10,6 +10,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.math.pow
+import kotlin.random.Random
 
 class HL {
 
@@ -151,32 +152,32 @@ class HL {
                 indexBuffer
             )
         }
-//        curveBuffers.forEach { key, (vertexBuffer, colorBuffer, indexBuffer) ->
-//            //set the attribute of the vertex to point to the vertex buffer
-//            GLES32.glVertexAttribPointer(
-//                mPositionHandle,
-//                COORDS_PER_VERTEX,
-//                GLES32.GL_FLOAT,
-//                false,
-//                vertexStride,
-//                vertexBuffer
-//            )
-//            GLES32.glVertexAttribPointer(
-//                mColorHandle,
-//                COORDS_PER_VERTEX,
-//                GLES32.GL_FLOAT,
-//                false,
-//                colorStride,
-//                colorBuffer
-//            )
-//            // Draw the 3D character A
-//            GLES32.glDrawElements(
-//                GLES32.GL_TRIANGLES,
-//                CharCurveData[key]?.third?.size ?: 0,
-//                GLES32.GL_UNSIGNED_INT,
-//                indexBuffer
-//            )
-//        }
+        curveBuffers.forEach { key, (vertexBuffer, colorBuffer, indexBuffer) ->
+            //set the attribute of the vertex to point to the vertex buffer
+            GLES32.glVertexAttribPointer(
+                mPositionHandle,
+                COORDS_PER_VERTEX,
+                GLES32.GL_FLOAT,
+                false,
+                vertexStride,
+                vertexBuffer
+            )
+            GLES32.glVertexAttribPointer(
+                mColorHandle,
+                COORDS_PER_VERTEX,
+                GLES32.GL_FLOAT,
+                false,
+                colorStride,
+                colorBuffer
+            )
+            // Draw the 3D character A
+            GLES32.glDrawElements(
+                GLES32.GL_TRIANGLES,
+                CharCurveData[key]?.third?.size ?: 0,
+                GLES32.GL_UNSIGNED_INT,
+                indexBuffer
+            )
+        }
     }
 
     private fun createCurve(controlPtsP: FloatArray, controlPtsQ: FloatArray, curveIndex: Int) {
@@ -191,7 +192,6 @@ class HL {
         var y = 0f
         var z = .5f
         val noSegments = controlPtsP.size / 2 / 3
-        val offset = CharXOffset.getOrNull(curveIndex) ?: 0f
         for (segment in 0 until noSegments) {
             for (temp in 0 until 10) {
                 val t = temp / 10.0
@@ -207,12 +207,12 @@ class HL {
                     ) + controlPtsP[px + 5] * 3 * t * t * (1 - t) + controlPtsP[px + 7] * t.pow(
                         3
                     )).toFloat()
-                vertices.add(vi++, x + offset)
+                vertices.add(vi++, x)
                 vertices.add(vi++, y)
                 vertices.add(vi++, z)
-                color.add(cIndX++, 1F)
-                color.add(cIndX++, 1F)
-                color.add(cIndX++, 1F)
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
                 color.add(cIndX++, 1F)
             }
             px += 6
@@ -234,12 +234,12 @@ class HL {
                     ) + controlPtsQ[px + 5] * 3 * t * t * (1 - t) + controlPtsQ[px + 7] * t.pow(
                         3
                     )).toFloat()
-                vertices.add(vj++, x + offset)
+                vertices.add(vj++, x)
                 vertices.add(vj++, y)
                 vertices.add(vj++, z)
-                color.add(cIndX++, 1F)
-                color.add(cIndX++, 1F)
-                color.add(cIndX++, 1F)
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
+                color.add(cIndX++, Random.nextDouble(0.25, 1.0).toFloat())
                 color.add(cIndX++, 1F)
             }
             px += 6
@@ -348,18 +348,32 @@ class HL {
                     data.first[i] = data.first[i++] + CharXOffset[index]
                     i += 2
                 }
+                i = 0
+                while (i in data.second.indices) {
+                    data.second[i++] = Random.nextDouble(0.25, 1.0).toFloat()
+                    data.second[i++] = Random.nextDouble(0.25, 1.0).toFloat()
+                    data.second[i++] = Random.nextDouble(0.25, 1.0).toFloat()
+                    i++
+                }
             }
         }
 
+        private val P = floatArrayOf(
+            -2f, -1f,
+            -2f, -2f,
+            0f, -2f,
+            3f, -0.5f,
+        )
+
+        private val Q = floatArrayOf(
+            -2f, -1f,
+            -3f, -2f,
+            0f, -3f,
+            3f, -0.2f,
+        )
+
         private val CharCurvePoints = arrayOf(
-            null,
-            null,
-            CharacterP.P.copyOf() to CharacterP.Q.copyOf(),
-            null,
-            CharacterR.P.copyOf() to CharacterR.Q.copyOf(),
-            null,
-            null,
-            null,
+            P.copyOf() to Q.copyOf(),
         )
 
         private val CharCurveData =

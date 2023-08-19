@@ -29,5 +29,6 @@ class MyView(context: Context?) : GLSurfaceView(context) {
     override fun onResume() {
         super.onResume()
         renderMode = RENDERMODE_CONTINUOUSLY
+        requestRender()
     }
 }
