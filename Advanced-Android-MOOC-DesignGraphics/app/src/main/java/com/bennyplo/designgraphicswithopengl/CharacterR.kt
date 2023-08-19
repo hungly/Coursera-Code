@@ -341,7 +341,7 @@ class CharacterR {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
         private const val COLOR_PER_VERTEX = 4
-        private val CharVertex = floatArrayOf(
+        val CharVertex = floatArrayOf(
             -1.5f, 2f, 0.5f, // 0
             0f, 2f, 0.5f, // 1
             0f, 0f, 0.5f, // 2
@@ -368,8 +368,15 @@ class CharacterR {
             1.5f, -2f, -0.5f, //23
             0.5f, -2f, -0.5f, //24
             -0.5f, -1f, -0.5f, //25
-        )
-        private var CharIndex = intArrayOf(
+        ).also {
+            var i = 0
+            while (i in it.indices) {
+                it[i] = it[i++] * 0.5f
+                it[i] = it[i++] * 0.5f
+                i++
+            }
+        }
+        var CharIndex = intArrayOf(
             // Front
             0, 6, 4, 4, 5, 0,
             0, 1, 7, 6, 7, 0,
@@ -394,7 +401,7 @@ class CharacterR {
             4, 5, 17, 17, 18, 5,
             10, 11, 23, 23, 24, 11,
         )
-        private var CharColor = floatArrayOf(
+        var CharColor = floatArrayOf(
             1.0f, 1.0f, 1.0f, 1.0f,  // 0
             1.0f, 1.0f, 1.0f, 1.0f,  // 1
             1.0f, 1.0f, 1.0f, 1.0f,  // 2
@@ -422,18 +429,30 @@ class CharacterR {
             0.25f, 0.25f, 0.25f, 1.0f,  //24
             0.25f, 0.25f, 0.25f, 1.0f,  //25
         )
-        private val P = floatArrayOf(
+        val P = floatArrayOf(
             0.00f, 1.40f,
             0.60f, 1.30f,
             0.60f, 0.60f,
             -0.25f, 0.50f,
-        )
-        private val Q = floatArrayOf(
+        ).also {
+            var i = 0
+            while (i in it.indices) {
+                it[i] = it[i++] * 0.5f
+                it[i] = it[i++] * 0.5f
+            }
+        }
+        val Q = floatArrayOf(
             0.00f, 2.00f,
             1.60f, 1.80f,
             1.60f, 0.00f,
             -0.60f, -0.08f,
-        )
+        ).also {
+            var i = 0
+            while (i in it.indices) {
+                it[i] = it[i++] * 0.5f
+                it[i] = it[i++] * 0.5f
+            }
+        }
     }
 
 }

@@ -40,47 +40,22 @@ class CharacterA {
 
     private val vertexStride = COORDS_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
 
-    var CharAVertex = floatArrayOf(
-        -0.2f, 1.0f, -0.3f,
-        -0.2f, 1.0f, 0.3f,
-        0.2f, 1.0f, -0.3f,
-        0.2f, 1.0f, 0.3f,
-        -1.0f, -1.0f, -0.5f,
-        -1.0f, -1.0f, 0.5f,
-        -0.6f, -1.0f, -0.5f,
-        -0.6f, -1.0f, 0.5f,
-        0.6f, -1.0f, 0.5f,
-        0.6f, -1.0f, -0.5f,
-        1.0f, -1.0f, 0.5f,
-        1.0f, -1.0f, -0.5f,
-        0.0f, 0.8f, 0.3f,
-        0.0f, 0.8f, -0.3f,
-        0.25f, 0.1f, 0.382f,
-        0.25f, 0.1f, -0.382f,
-        -0.25f, 0.1f, 0.382f,
-        -0.25f, 0.1f, -0.382f,
-        0.32f, -0.1f, 0.41f,
-        0.32f, -0.1f, -0.41f,
-        -0.32f, -0.1f, 0.41f,
-        -0.32f, -0.1f, -0.41f
-    )
-
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
-            CharAVertex.size * Float.SIZE_BYTES
+            CharVertex.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(CharAVertex)
+        vertexBuffer.put(CharVertex)
         vertexBuffer.position(0)
-        vertexCount = CharAVertex.size / COORDS_PER_VERTEX
+        vertexCount = CharVertex.size / COORDS_PER_VERTEX
         val cb = ByteBuffer.allocateDirect(
-            CharAColor.size * Float.SIZE_BYTES
+            CharColor.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         cb.order(ByteOrder.nativeOrder())
         colorBuffer = cb.asFloatBuffer()
-        colorBuffer.put(CharAColor)
+        colorBuffer.put(CharColor)
         colorBuffer.position(0)
         val ib = IntBuffer.allocate(CharIndex.size)
         indexBuffer = ib
@@ -167,7 +142,7 @@ class CharacterA {
             14, 18, 20, 20, 16, 14,
             15, 19, 21, 21, 17, 15
         )
-        var CharAColor = floatArrayOf(
+        var CharColor = floatArrayOf(
             0.25f, 0.25f, 0.25f, 1.0f,  //0
             1.0f, 1.0f, 1.0f, 1.0f,  //1
             0.25f, 0.25f, 0.25f, 1.0f,  //2
@@ -190,6 +165,31 @@ class CharacterA {
             0.25f, 0.25f, 0.25f, 1.0f,  //19
             1.0f, 1.0f, 1.0f, 1.0f,  //20
             0.25f, 0.25f, 0.25f, 1.0f,  //21
+        )
+
+        var CharVertex = floatArrayOf(
+            -0.2f, 1.0f, -0.3f,
+            -0.2f, 1.0f, 0.3f,
+            0.2f, 1.0f, -0.3f,
+            0.2f, 1.0f, 0.3f,
+            -1.0f, -1.0f, -0.5f,
+            -1.0f, -1.0f, 0.5f,
+            -0.6f, -1.0f, -0.5f,
+            -0.6f, -1.0f, 0.5f,
+            0.6f, -1.0f, 0.5f,
+            0.6f, -1.0f, -0.5f,
+            1.0f, -1.0f, 0.5f,
+            1.0f, -1.0f, -0.5f,
+            0.0f, 0.8f, 0.3f,
+            0.0f, 0.8f, -0.3f,
+            0.25f, 0.1f, 0.382f,
+            0.25f, 0.1f, -0.382f,
+            -0.25f, 0.1f, 0.382f,
+            -0.25f, 0.1f, -0.382f,
+            0.32f, -0.1f, 0.41f,
+            0.32f, -0.1f, -0.41f,
+            -0.32f, -0.1f, 0.41f,
+            -0.32f, -0.1f, -0.41f
         )
     }
 

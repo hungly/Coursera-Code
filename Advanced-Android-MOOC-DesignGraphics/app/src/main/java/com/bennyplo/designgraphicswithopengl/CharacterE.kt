@@ -125,7 +125,7 @@ class CharacterE {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
         private const val COLOR_PER_VERTEX = 4
-        private val CharVertex = floatArrayOf(
+        val CharVertex = floatArrayOf(
             -1.5f,     2f,  0.5f, // 0
              1.5f,     2f,  0.5f, // 1
              1.5f,     1f,  0.5f, // 2
@@ -151,8 +151,15 @@ class CharacterE {
              1.5f,  -  1f, -0.5f, //21
              1.5f,  -  2f, -0.5f, //22
             -1.5f,  -  2f, -0.5f, //23
-        )
-        private var CharIndex = intArrayOf(
+        ).also {
+            var i = 0
+            while (i in it.indices) {
+                it[i] = it[i++] * 0.5f
+                it[i] = it[i++] * 0.5f
+                i++
+            }
+        }
+        var CharIndex = intArrayOf(
             // Front
              0,  3,  8,  8, 11,  0,
              0,  1,  2,  2,  3,  0,
@@ -180,7 +187,7 @@ class CharacterE {
              6,  7, 18, 18, 19,  7,
             10, 11, 22, 22, 23, 11,
         )
-        private var CharColor = floatArrayOf(
+        var CharColor = floatArrayOf(
              1.0f,  1.0f,  1.0f, 1.0f,  // 0
              1.0f,  1.0f,  1.0f, 1.0f,  // 1
              1.0f,  1.0f,  1.0f, 1.0f,  // 2

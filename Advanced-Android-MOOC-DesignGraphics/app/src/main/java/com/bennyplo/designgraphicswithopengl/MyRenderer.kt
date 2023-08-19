@@ -45,6 +45,9 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mHalfCone by lazy {
         HalfCone()
     }
+    private val mImperial by lazy {
+        Imperial()
+    }
     private val mMVMatrix = FloatArray(MATRIX_SIZE) //model view matrix
     private val mMVPMatrix = FloatArray(MATRIX_SIZE) //model view projection matrix
     private val mModelMatrix = FloatArray(MATRIX_SIZE) //model  matrix
@@ -94,6 +97,7 @@ class MyRenderer : GLSurfaceView.Renderer {
 //        mSphere.draw(mMVPMatrix)
 //        mArbitrary.draw(mMVPMatrix)
 //        mHalfCone.draw(mMVPMatrix)
+        mImperial.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -101,7 +105,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
+        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 25.0f)
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
