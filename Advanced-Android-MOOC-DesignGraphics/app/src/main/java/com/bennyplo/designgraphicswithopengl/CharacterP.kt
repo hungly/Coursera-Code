@@ -7,10 +7,12 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import kotlin.math.pow
 
 class CharacterP {
 
     private val colorBuffer: FloatBuffer
+    private val colorCurveBuffer: FloatBuffer
     private val colorStride = COLOR_PER_VERTEX * Float.SIZE_BYTES //4 bytes per vertex
 
     private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
@@ -20,13 +22,17 @@ class CharacterP {
             "}" //change the colour based on the variable from the vertex shader
 
     private val indexBuffer: IntBuffer
+    private val indexCurveBuffer: IntBuffer
     private val mColorHandle: Int
     private val mMVPMatrixHandle: Int
     private val mPositionHandle: Int
     private val mProgram: Int
     private val vertexBuffer: FloatBuffer
+    private val vertexCurveBuffer: FloatBuffer
 
     private val vertexCount // number of vertices
+            : Int
+    private val vertexCurveCount // number of vertices
             : Int
 
     private val vertexShaderCode = "attribute vec3 aVertexPosition;" +  //vertex of an object
@@ -40,7 +46,12 @@ class CharacterP {
 
     private val vertexStride = COORDS_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
 
+    private var charCurveVertex = floatArrayOf()
+    private var charCurveIndex = intArrayOf()
+    private var charCurveColor = floatArrayOf()
+
     init {
+        createCurve(P, Q)
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
             CharVertex.size * Float.SIZE_BYTES
@@ -53,14 +64,40 @@ class CharacterP {
         val cb = ByteBuffer.allocateDirect(
             CharColor.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
+
         cb.order(ByteOrder.nativeOrder())
         colorBuffer = cb.asFloatBuffer()
         colorBuffer.put(CharColor)
         colorBuffer.position(0)
+
         val ib = IntBuffer.allocate(CharIndex.size)
         indexBuffer = ib
         indexBuffer.put(CharIndex)
         indexBuffer.position(0)
+
+        // Curve
+        val bbc = ByteBuffer.allocateDirect(
+            charCurveVertex.size * Float.SIZE_BYTES
+        ) // (# of coordinate values * 4 bytes per float)
+        bbc.order(ByteOrder.nativeOrder())
+        vertexCurveBuffer = bbc.asFloatBuffer()
+        vertexCurveBuffer.put(charCurveVertex)
+        vertexCurveBuffer.position(0)
+        vertexCurveCount = charCurveVertex.size / CharacterP.COORDS_PER_VERTEX
+
+        val cbc = ByteBuffer.allocateDirect(
+            charCurveColor.size * Float.SIZE_BYTES
+        ) // (# of coordinate values * 4 bytes per float)
+        cbc.order(ByteOrder.nativeOrder())
+        colorCurveBuffer = cbc.asFloatBuffer()
+        colorCurveBuffer.put(charCurveColor)
+        colorCurveBuffer.position(0)
+
+        val ibc = IntBuffer.allocate(charCurveIndex.size)
+        indexCurveBuffer = ibc
+        indexCurveBuffer.put(charCurveIndex)
+        indexCurveBuffer.position(0)
+
         // prepare shaders and OpenGL program
         val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -119,6 +156,185 @@ class CharacterP {
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
+        // Curve
+        //set the attribute of the vertex to point to the vertex buffer
+        GLES32.glVertexAttribPointer(
+            mPositionHandle,
+            CharacterP.COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            vertexStride,
+            vertexCurveBuffer
+        )
+        GLES32.glVertexAttribPointer(
+            mColorHandle,
+            CharacterP.COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            colorStride,
+            colorCurveBuffer
+        )
+        // Draw the 3D character A
+        GLES32.glDrawElements(
+            GLES32.GL_TRIANGLES,
+            charCurveIndex.size,
+            GLES32.GL_UNSIGNED_INT,
+            indexCurveBuffer
+        )
+    }
+
+    private fun createCurve(controlPtsP: FloatArray, controlPtsQ: FloatArray) {
+        val vertices = arrayListOf<Float>()
+        val color = arrayListOf<Float>()
+        val index = arrayListOf<Int>()
+        var vi = 0
+        var cIndX = 0
+        var indx = 0
+        var px = 0
+        var x = 0f
+        var y = 0f
+        var z = .5f
+        var centroidX = 0f
+        var centroidY = 0f
+        val noSegments = controlPtsP.size / 2 / 3
+        for (i in controlPtsP.indices step 2) {
+            centroidX += controlPtsP[i]
+            centroidY += controlPtsP[i + 1]
+        }
+        centroidX /= controlPtsP.size / 2F
+        centroidY /= controlPtsP.size / 2F
+        for (segment in 0 until noSegments) {
+            for (temp in 0 until 10) {
+                val t = temp / 10.0
+                x =
+                    ((1 - t).pow(3) * controlPtsP[px + 0] + controlPtsP[px + 2] * 3 * t * (1 - t).pow(
+                        2
+                    ) + controlPtsP[px + 4] * 3 * t * t * (1 - t) + controlPtsP[px + 6] * t.pow(
+                        3
+                    )).toFloat()
+                y =
+                    ((1 - t).pow(3) * controlPtsP[px + 1] + controlPtsP[px + 3] * 3 * t * (1 - t).pow(
+                        2
+                    ) + controlPtsP[px + 5] * 3 * t * t * (1 - t) + controlPtsP[px + 7] * t.pow(
+                        3
+                    )).toFloat()
+                vertices.add(vi++, x)
+                vertices.add(vi++, y)
+                vertices.add(vi++, z)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+            }
+            px += 6
+        }
+        px = 0
+        var vj = vi
+        for (segment in 0 until noSegments) {
+            for (temp in 0 until 10) {
+                val t = temp / 10.0
+                x =
+                    ((1 - t).pow(3) * controlPtsQ[px + 0] + controlPtsQ[px + 2] * 3 * t * (1 - t).pow(
+                        2
+                    ) + controlPtsQ[px + 4] * 3 * t * t * (1 - t) + controlPtsQ[px + 6] * t.pow(
+                        3
+                    )).toFloat()
+                y =
+                    ((1 - t).pow(3) * controlPtsQ[px + 1] + controlPtsQ[px + 3] * 3 * t * (1 - t).pow(
+                        2
+                    ) + controlPtsQ[px + 5] * 3 * t * t * (1 - t) + controlPtsQ[px + 7] * t.pow(
+                        3
+                    )).toFloat()
+                vertices.add(vj++, x)
+                vertices.add(vj++, y)
+                vertices.add(vj++, z)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+                color.add(cIndX++, 1F)
+            }
+            px += 6
+        }
+        var noVertices = vj
+        var v0 = 0
+        var v1 = 1
+        var v2 = vi / 3
+        var v3 = vi / 3 + 1
+        while (v3 < noVertices / 3) {
+            index.add(indx++, v0)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v3)
+            v0++
+            v1++
+            v2++
+            v3++
+        }
+        var vk = noVertices
+        var i = 0
+        while (i < noVertices) {
+            vertices.add(vk++, vertices[i++])
+            vertices.add(vk++, vertices[i++])
+            vertices.add(vk++, -vertices[i++])
+            color.add(cIndX++, 0.25F)
+            color.add(cIndX++, 0.25F)
+            color.add(cIndX++, 0.25F)
+            color.add(cIndX++, 1F)
+        }
+        noVertices = vk
+        v0 = vj / 3
+        v1 = vj / 3 + 1
+        v2 = (vj + vi) / 3
+        v3 = (vj + vi) / 3 + 1
+        while (v3 < noVertices / 3) {
+            index.add(indx++, v0)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v3)
+            v0++
+            v1++
+            v2++
+            v3++
+        }
+        v0 = 0
+        v1 = 1
+        v2 = vj / 3
+        v3 = vj / 3 + 1
+        while (v3 < (vi + vj) / 3) {
+            index.add(indx++, v0)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v3)
+            v0++
+            v1++
+            v2++
+            v3++
+        }
+        v0 = vi / 3
+        v1 = vi / 3 + 1
+        v2 = (vj + vi) / 3
+        v3 = (vj + vi) / 3 + 1
+        while (v3 < noVertices / 3) {
+            index.add(indx++, v0)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v1)
+            index.add(indx++, v2)
+            index.add(indx++, v3)
+            v0++
+            v1++
+            v2++
+            v3++
+        }
+        charCurveVertex = vertices.toFloatArray()
+        charCurveIndex = index.toIntArray()
+        charCurveColor = color.toFloatArray()
     }
 
     companion object {
@@ -189,6 +405,18 @@ class CharacterP {
             0.25f, 0.25f, 0.25f, 1.0f,  //17
             0.25f, 0.25f, 0.25f, 1.0f,  //18
             0.25f, 0.25f, 0.25f, 1.0f,  //19
+        )
+        private val P = floatArrayOf(
+            0.00f,  1.40f,
+            0.60f,  1.30f,
+            0.60f,  0.60f,
+            -0.25f,  0.50f,
+        )
+        private val Q = floatArrayOf(
+            0.00f,  2.00f,
+            1.60f,  1.80f,
+            1.60f,  0.00f,
+            -0.60f, -0.08f,
         )
     }
 
