@@ -27,4 +27,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        glView?.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        glView?.onResume()
+    }
 }

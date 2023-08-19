@@ -146,7 +146,7 @@ class CharacterI {
             // Front
             0, 1, 2, 2, 3, 0,
             // Back
-            4, 5, 6, 5, 6, 7,
+            4, 5, 6, 6, 7, 0,
             // Left
             0, 3, 4, 3, 4, 7,
             // Right

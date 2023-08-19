@@ -6,6 +6,8 @@ import android.opengl.Matrix
 import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 class MyRenderer : GLSurfaceView.Renderer {
 
@@ -54,9 +56,43 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mProjectionMatrix = FloatArray(MATRIX_SIZE) //projection mastrix
     private val mViewMatrix = FloatArray(MATRIX_SIZE) //view matrix
 
+    private val increment = 1f
+
+    private var xRotateDirection = 1
+    private var yRotateDirection = 1
+    private var zRotateDirection = 1
+
+    private var xRotateTarget = Random.nextInt(10..60)
+    private var yRotateTarget = Random.nextInt(10..60)
+    private var zRotateTarget = Random.nextInt(10..60)
+
+    private var angleX = 0f
+    private var angleY = 0f
+    private var angleZ = 0f
+
     override fun onDrawFrame(unused: GL10) {
-        val mRotationMatrix = FloatArray(MATRIX_SIZE)
-        val mRotationMatrix2 = FloatArray(MATRIX_SIZE)
+        if ((xRotateDirection < 0 && angleX <= xRotateTarget) || (xRotateDirection >0 && angleX >= xRotateTarget)) {
+            xRotateDirection *= -1
+            xRotateTarget = Random.nextInt(10..60) * xRotateDirection
+        }
+
+        if ((yRotateDirection < 0 && angleY <= yRotateTarget) || (yRotateDirection >0 && angleY >= yRotateTarget)) {
+            yRotateDirection *= -1
+            yRotateTarget = Random.nextInt(10..60) * yRotateDirection
+        }
+
+        if ((zRotateDirection < 0 && angleZ <= zRotateTarget) || (zRotateDirection >0 && angleZ >= zRotateTarget)) {
+            zRotateDirection *= -1
+            zRotateTarget = Random.nextInt(10..60) * zRotateDirection
+        }
+
+        angleX += increment * xRotateDirection
+        angleY += increment * yRotateDirection
+        angleZ += increment * zRotateDirection
+
+        val mRotationMatrixX = FloatArray(MATRIX_SIZE)
+        val mRotationMatrixY = FloatArray(MATRIX_SIZE)
+        val mRotationMatrixZ = FloatArray(MATRIX_SIZE)
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
         GLES32.glClearDepthf(1.0f) //set up the depth buffer
@@ -68,8 +104,9 @@ class MyRenderer : GLSurfaceView.Renderer {
         ) //set the model view projection matrix to an identity matrix
         Matrix.setIdentityM(mMVMatrix, 0) //set the model view  matrix to an identity matrix
         Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
-        Matrix.setRotateM(mRotationMatrix2, 0, 30f, 0f, 1f, 0f) //rotate around the y-axis
-        Matrix.setRotateM(mRotationMatrix, 0, 30f, 1f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixX, 0, angleX, 1f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, angleY, 0f, 1f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrixZ, 0, angleZ, 0f, 1f, 0f) //rotate around the z-axis
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
             mViewMatrix, 0,
@@ -78,8 +115,9 @@ class MyRenderer : GLSurfaceView.Renderer {
             0f, 1f, 0.0f
         ) //head is down (set to (0,1,0) to look from the top)
         Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -5f) //move backward for 5 units
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0)
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix2, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixZ, 0)
         // Calculate the projection and view transformation
         //calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)

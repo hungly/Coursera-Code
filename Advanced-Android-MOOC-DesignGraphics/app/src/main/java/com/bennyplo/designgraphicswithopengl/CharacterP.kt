@@ -389,6 +389,7 @@ class CharacterP {
              8,  9, 18, 18, 19,  9,
             // Bottom
              6,  7, 16, 16, 17,  7,
+             2,  3, 12, 12, 13,  3,
              4,  5, 14, 14, 15,  5,
         )
         var CharColor = floatArrayOf(
