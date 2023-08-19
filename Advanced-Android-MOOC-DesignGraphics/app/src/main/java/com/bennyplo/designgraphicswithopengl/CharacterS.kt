@@ -55,7 +55,7 @@ class CharacterS {
         var px = 0
         var x = 0f
         var y = 0f
-        var z = .2f
+        var z = .5f
         var centroidX = 0f
         var centroidY = 0f
         val noSegments = controlePtsP.size / 2 / 3
