@@ -8,7 +8,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class CharacterV {
+class CharacterI {
 
     private val colorBuffer: FloatBuffer
     private val colorStride = COLOR_PER_VERTEX * Float.SIZE_BYTES //4 bytes per vertex
@@ -43,19 +43,19 @@ class CharacterV {
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb = ByteBuffer.allocateDirect(
-            CharVVertex.size * Float.SIZE_BYTES
+            CharVertex.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(CharVVertex)
+        vertexBuffer.put(CharVertex)
         vertexBuffer.position(0)
-        vertexCount = CharVVertex.size / COORDS_PER_VERTEX
+        vertexCount = CharVertex.size / COORDS_PER_VERTEX
         val cb = ByteBuffer.allocateDirect(
-            CharVColor.size * Float.SIZE_BYTES
+            CharColor.size * Float.SIZE_BYTES
         ) // (# of coordinate values * 4 bytes per float)
         cb.order(ByteOrder.nativeOrder())
         colorBuffer = cb.asFloatBuffer()
-        colorBuffer.put(CharVColor)
+        colorBuffer.put(CharColor)
         colorBuffer.position(0)
         val ib = IntBuffer.allocate(CharIndex.size)
         indexBuffer = ib
@@ -125,53 +125,39 @@ class CharacterV {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
         private const val COLOR_PER_VERTEX = 4
-        private val CharVVertex = floatArrayOf(
-            -2f,    2f,     0.5f,
-            -1f,    2f,     0.5f,
-             0f,    0f,     0.5f,
-             1f,    2f,     0.5f,
-             2f,    2f,     0.5f,
-             0f,   -2f,     0.5f,
-            -2f,    2f,    -0.5f,
-            -1f,    2f,    -0.5f,
-             0f,    0f,    -0.5f,
-             1f,    2f,    -0.5f,
-             2f,    2f,    -0.5f,
-             0f,   -2f,    -0.5f,
+        private val CharVertex = floatArrayOf(
+            -0.5f,  2f,  0.5f, //0
+             0.5f,  2f,  0.5f, //1
+             0.5f, -2f,  0.5f, //2
+            -0.5f, -2f,  0.5f, //3
+            -0.5f,  2f, -0.5f, //4
+             0.5f,  2f, -0.5f, //5
+             0.5f, -2f, -0.5f, //6
+            -0.5f, -2f, -0.5f, //7
         )
         private var CharIndex = intArrayOf(
             // Front
-            0, 1, 5, 1, 2, 5,
-            2, 3, 5, 3, 4, 5,
+            0, 1, 2, 2, 3, 0,
             // Back
-            6, 7, 11, 7, 8, 11,
-            8, 9, 11, 9, 10, 11,
-            // Top left
-            0, 1, 6, 1, 6, 7,
-            // Top right
-            3, 4, 9, 4, 9, 10,
-            // Outer left
-            0, 5, 6, 5, 6, 11,
-            // Outer right
-            4, 5, 11, 4, 10, 11,
-            // Inner left
-            1, 2, 6, 2, 6, 7,
-            // Inner right
-            2, 3, 8, 3, 8, 9
+            4, 5, 6, 5, 6, 7,
+            // Left
+            0, 3, 4, 3, 4, 7,
+            // Right
+            1, 2, 5, 2, 5, 6,
+            // Top
+            0, 1, 4, 1, 4, 5,
+            // Bottom
+            2, 3, 6, 3, 6, 7
         )
-        private var CharVColor = floatArrayOf(
-            0.0f, 0.0f, 1.0f, 1.0f,  //0
-            0.0f, 0.0f, 1.0f, 1.0f,  //1
-            0.0f, 0.0f, 1.0f, 1.0f,  //2
-            0.0f, 0.0f, 1.0f, 1.0f,  //3
-            0.0f, 0.0f, 1.0f, 1.0f,  //4
-            0.0f, 0.0f, 1.0f, 1.0f,  //5
-            0.0f, 1.0f, 1.0f, 1.0f,  //6
-            0.0f, 1.0f, 1.0f, 1.0f,  //7
-            0.0f, 1.0f, 1.0f, 1.0f,  //8
-            0.0f, 1.0f, 1.0f, 1.0f,  //9
-            0.0f, 1.0f, 1.0f, 1.0f,  //10
-            0.0f, 1.0f, 1.0f, 1.0f,  //11
+        private var CharColor = floatArrayOf(
+            1.0f, 1.0f, 1.0f, 1.0f,  //0
+            1.0f, 1.0f, 1.0f, 1.0f,  //1
+            1.0f, 1.0f, 1.0f, 1.0f,  //2
+            1.0f, 1.0f, 1.0f, 1.0f,  //3
+            0.25f, 0.25f, 0.25f, 1.0f,  //4
+            0.25f, 0.25f, 0.25f, 1.0f,  //5
+            0.25f, 0.25f, 0.25f, 1.0f,  //6
+            0.25f, 0.25f, 0.25f, 1.0f,  //7
         )
     }
 
