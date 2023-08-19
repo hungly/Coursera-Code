@@ -15,14 +15,17 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mCharE by lazy {
         CharacterE()
     }
-    private val mCharM by lazy {
-        CharacterM()
-    }
     private val mCharI by lazy {
         CharacterI()
     }
     private val mCharL by lazy {
         CharacterL()
+    }
+    private val mCharM by lazy {
+        CharacterM()
+    }
+    private val mCharP by lazy {
+        CharacterP()
     }
     private val mCharS by lazy {
         CharacterS()
@@ -77,15 +80,16 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mCharA.draw(mMVPMatrix)
 //        mCharE.draw(mMVPMatrix)
-//        mCharM.draw(mMVPMatrix)
 //        mCharI.draw(mMVPMatrix)
 //        mCharL.draw(mMVPMatrix)
-//        mCharV.draw(mMVPMatrix)
+//        mCharM.draw(mMVPMatrix)
+        mCharP.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
+//        mCharV.draw(mMVPMatrix)
 //        mCharV.draw(mMVPMatrix)
 //        mSphere.draw(mMVPMatrix)
 //        mArbitrary.draw(mMVPMatrix)
-        mHalfCone.draw(mMVPMatrix)
+//        mHalfCone.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
