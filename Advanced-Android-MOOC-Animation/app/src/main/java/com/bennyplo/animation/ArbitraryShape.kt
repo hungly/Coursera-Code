@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import javax.microedition.khronos.opengles.GL
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -16,20 +17,37 @@ class ArbitraryShape {
             "varying vec4 vColor;" +  //variable to be accessed by the fragment shader
             "uniform vec3 uPointLightingLocation;" +
             "varying float vPointLightWeighting;" +
+            "attribute vec3 aVertexNormal;" +
+            "uniform vec3 uDiffuseLightLocation;" +
+            "uniform vec4 uDiffuseColor;" +
+            "varying vec4 vDiffuseColor;" +
+            "varying float vDiffuseLightWeighting;" +
+            "uniform vec3 uAttenuation;" +
             "void main() {" +
             "   vec4 mvPosition = uMVPMatrix * vec4(aVertexPosition,1.0);" +
             "   vec3 lightDirection = normalize(uPointLightingLocation - mvPosition.xyz);" +
             "   float dist_from_light = distance(uPointLightingLocation, mvPosition.xyz);" +
             "   vPointLightWeighting = 10.0 / (dist_from_light * dist_from_light);" +
             "   gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
+            "   vec3 diffuseLightDirection = normalize(uDiffuseLightLocation - mvPosition.xyz);" +
+            "   vec3 transformedNormal = normalize((uMVPMatrix * vec4(aVertexNormal, 0.0)).xyz);" +
+            "   vDiffuseColor = uDiffuseColor;" +
+            "   vec3 vertexToLightSource = uDiffuseLightLocation - mvPosition.xyz;" +
+            "   float diff_light_dist = length(vertexToLightSource);" +
+            "   float attenuation = 1.0 / (uAttenuation.x + uAttenuation.y * diff_light_dist + uAttenuation.z * diff_light_dist * diff_light_dist);" +
+            "   vDiffuseLightWeighting = attenuation * max(dot(transformedNormal, diffuseLightDirection), 0.0);" +
             "   vColor=aVertexColor;" +
             "}" //get the colour from the application program
     private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
             "varying vec4 vColor;" +  //variable from the vertex shader
             "varying float vPointLightWeighting;" +
+            "varying vec4 vDiffuseColor;" +
+            "varying float vDiffuseLightWeighting;" +
             //---------
             "void main() {" +
-            "   gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
+            "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
+//            "   gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
+            "   gl_FragColor = vColor + diffuseColor;" +
             "}" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
@@ -64,11 +82,31 @@ class ArbitraryShape {
     private lateinit var ringIndex: IntArray
     private lateinit var ringColor: FloatArray
 
+    private lateinit var sphere1Normal: FloatArray
+    private lateinit var sphere2Normal: FloatArray
+    private lateinit var ringNormal: FloatArray
+
+    private val normal1Buffer: FloatBuffer
+    private val normal2Buffer: FloatBuffer
+    private val ringNormalBuffer: FloatBuffer
+
+    private val mNormalHandle: Int
+    private val diffuseLightLocationHandle: Int
+    private val diffuseColorHandle: Int
+    private val attenuationHandle: Int
+
     private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
+        val normals1 = FloatArray(65535)
+        val normals2 = FloatArray(65535)
+        val ringNormals = FloatArray(65535)
+        var normal1Indx = 0
+        var normal2Indx = 0
+        var ringNormIndx = 0
+
         val vertices = FloatArray(65535)
         val index = IntArray(65535)
         val color = FloatArray(65535)
-        val pNormLen = (noLongitude + 1) * 3 * 3
+        var pNormLen = (noLongitude + 1) * 3 * 3
         var vertexIndex = 0
         var colorIndex = 0
         var indx = 0
@@ -121,6 +159,10 @@ class ArbitraryShape {
                     ringColor[rCIndex++] = abs(tColor)
                     ringColor[rCIndex++] = 0f
                     ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat()
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() + dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat()
                 }
                 if (row == 15) {
                     ringVertices[rVIndx++] = (radius * x).toFloat() / 2
@@ -130,6 +172,10 @@ class ArbitraryShape {
                     ringColor[rCIndex++] = abs(tColor)
                     ringColor[rCIndex++] = 0f
                     ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
                 }
                 if (row == 10) {
                     ringVertices[rVIndx++] = (radius * x).toFloat() / 2
@@ -139,6 +185,10 @@ class ArbitraryShape {
                     ringColor[rCIndex++] = 1f
                     ringColor[rCIndex++] = abs(tColor)
                     ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
                 }
                 if (row == 20) {
                     ringVertices[pLen++] = (radius * x).toFloat()
@@ -148,9 +198,20 @@ class ArbitraryShape {
                     ringColor[pColorLen++] = 1f
                     ringColor[pColorLen++] = abs(tColor)
                     ringColor[pColorLen++] = 1f
+
+                    ringNormals[pNormLen++] = (radius * x).toFloat()
+                    ringNormals[pNormLen++] = (-radius * cosTheta).toFloat() - dist
+                    ringNormals[pNormLen++] = (radius * z).toFloat()
                     //-------
                 }
                 tColor += tColorInc
+
+                normals1[normal1Indx++] = (radius * x).toFloat()
+                normals1[normal1Indx++] = (radius * cosTheta).toFloat() + dist
+                normals1[normal1Indx++] = (radius * z).toFloat()
+                normals2[normal2Indx++] = (radius * x).toFloat()
+                normals2[normal2Indx++] = (radius * cosTheta).toFloat() - dist
+                normals2[normal2Indx++] = (radius * z).toFloat()
             }
         }
         //index buffer
@@ -196,6 +257,7 @@ class ArbitraryShape {
             ringIndex[rIndx++] = j + pLen * 3
         }
 
+        ringNormIndx = (noLongitude + 1) * 3 * 4
 
         //set the buffers
         sphereVertex = vertices.copyOf(vertexIndex)
@@ -207,13 +269,50 @@ class ArbitraryShape {
         ringVertex = ringVertices.copyOf(rVIndx)
         this.ringColor = ringColor.copyOf(rCIndex)
         this.ringIndex = ringIndex.copyOf(rIndx)
+
+        sphere1Normal = normals1.copyOf(normal1Indx)
+        sphere2Normal = normals2.copyOf(normal2Indx)
+        ringNormal = ringNormals.copyOf(ringNormIndx)
     }
 
     init {
-        lightLocation[0] = 2F
-        lightLocation[1] = 2F
-        lightLocation[2] = 0F
+        LightLocation[0] = 2F
+        LightLocation[1] = 2F
+        LightLocation[2] = 0F
+
+        DiffuseLightLocation[0] = 3F;
+        DiffuseLightLocation[1] = 2F;
+        DiffuseLightLocation[2] = 2F;
+
+        DiffuseColor[0] = 1F
+        DiffuseColor[1] = 1F
+        DiffuseColor[2] = 1F
+        DiffuseColor[3] = 1F
+
+        Attenuation[0] = 1F
+        Attenuation[1] = 0.35F
+        Attenuation[2] = 0.44F
+
         createSphere(2f, 30, 30)
+
+        val nb1 = ByteBuffer.allocateDirect(sphere1Normal.size * 4)
+        nb1.order(ByteOrder.nativeOrder())
+        normal1Buffer = nb1.asFloatBuffer()
+        normal1Buffer.put(sphere1Normal)
+        normal1Buffer.position(0)
+
+        val nb2 = ByteBuffer.allocateDirect(sphere2Normal.size * 4)
+        nb2.order(ByteOrder.nativeOrder())
+        normal2Buffer = nb2.asFloatBuffer()
+        normal2Buffer.put(sphere2Normal)
+        normal2Buffer.position(0)
+
+        val rnb = ByteBuffer.allocateDirect(ringNormal.size * 4)
+        rnb.order(ByteOrder.nativeOrder())
+        ringNormalBuffer = rnb.asFloatBuffer()
+        ringNormalBuffer.put(ringNormal)
+        ringNormalBuffer.position(0)
+
         // initialize vertex byte buffer for shape coordinates
         val bb =
             ByteBuffer.allocateDirect(sphereVertex.size * 4) // (# of coordinate values * 4 bytes per float)
@@ -269,6 +368,7 @@ class ArbitraryShape {
         val vertexShader: Int = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader: Int =
             MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
+        MyRenderer.checkGlError("check - load shader")
         mProgram = GLES32.glCreateProgram() // create empty OpenGL Program
         GLES32.glAttachShader(mProgram, vertexShader) // add the vertex shader to program
         GLES32.glAttachShader(mProgram, fragmentShader) // add the fragment shader to program
@@ -291,17 +391,33 @@ class ArbitraryShape {
             colorBuffer
         )
         //---------
+        mNormalHandle = GLES32.glGetAttribLocation(mProgram, "aVertexNormal")
+        GLES32.glEnableVertexAttribArray(mNormalHandle)
+        MyRenderer.checkGlError("check - glGetAttribLocation - aVertexNormal")
+
+        diffuseLightLocationHandle = GLES32.glGetUniformLocation(mProgram, "uDiffuseLightLocation")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uDiffuseLightLocation")
+        diffuseColorHandle = GLES32.glGetUniformLocation(mProgram, "uDiffuseColor")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uDiffuseColor")
+        attenuationHandle = GLES32.glGetUniformLocation(mProgram, "uAttenuation")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uAttenuation")
+        //---------
         // get handle to shape's transformation matrix
         pointLightingLocationHandle = GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
-        MyRenderer.checkGlError("glGetUniformLocation")
     }
 
     fun draw(mvpMatrix: FloatArray?) {
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0)
         //---------
-        GLES32.glUniform3fv(pointLightingLocationHandle, 1, lightLocation, 0)
+        GLES32.glUniform3fv(pointLightingLocationHandle, 1, LightLocation, 0)
+
+        GLES32.glUniform3fv(diffuseLightLocationHandle, 1, DiffuseLightLocation, 0)
+        GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)
+        GLES32.glUniform3fv(attenuationHandle, 1, Attenuation, 0)
+        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, normal1Buffer)
+
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             mPositionHandle, COORDS_PER_VERTEX,
@@ -328,6 +444,9 @@ class ArbitraryShape {
             mColorHandle, COORDS_PER_VERTEX,
             GLES32.GL_FLOAT, false, colorStride, color2Buffer
         )
+
+        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, normal2Buffer)
+
         // Draw the Sphere
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
@@ -345,6 +464,9 @@ class ArbitraryShape {
             mColorHandle, COORDS_PER_VERTEX,
             GLES32.GL_FLOAT, false, colorStride, ringColorBuffer
         )
+
+        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, ringNormalBuffer)
+
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
             ringIndex.size,
@@ -354,9 +476,9 @@ class ArbitraryShape {
     }
 
     fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
-        lightLocation[0] = pX
-        lightLocation[1] = pY
-        lightLocation[2] = pZ
+        LightLocation[0] = pX
+        LightLocation[1] = pY
+        LightLocation[2] = pZ
     }
 
     companion object {
@@ -365,6 +487,9 @@ class ArbitraryShape {
         const val COORDS_PER_VERTEX = 3
         const val COLOR_PER_VERTEX = 4
 
-        private val lightLocation = FloatArray(3)
+        private val LightLocation = FloatArray(3)
+        private val DiffuseLightLocation = FloatArray(3)
+        private val DiffuseColor = FloatArray(4)
+        private val Attenuation = FloatArray(3)
     }
 }
