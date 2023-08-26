@@ -13,10 +13,10 @@ class MyRenderer : GLSurfaceView.Renderer {
     private val mViewMatrix = FloatArray(16) //view matrix
     private val mMVMatrix = FloatArray(16) //model view matrix
     private val mModelMatrix = FloatArray(16) //model  matrix
-    private var mCharA: CharacterA? = null
-    private var mCharS: CharacterS? = null
-    private var mSphere: Sphere? = null
-    private var mArbitrary: ArbitraryShape? = null
+    private var mCharA: MyCharacterA? = null
+    private var mCharS: MyCharacterS? = null
+    private var mSphere: MySphere? = null
+    private var mArbitrary: MyArbitraryShape? = null
 
     private var mAngleX: Float = 0F
     private var mAngleY: Float = 0F
@@ -24,10 +24,10 @@ class MyRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
         GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        mCharA = CharacterA()
-        mCharS = CharacterS()
-        mSphere = Sphere()
-        mArbitrary = ArbitraryShape()
+        mCharA = MyCharacterA()
+        mCharS = MyCharacterS()
+        mSphere = MySphere()
+        mArbitrary = MyArbitraryShape()
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {

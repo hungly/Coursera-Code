@@ -9,21 +9,18 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-class Sphere {
-    private val vertexShaderCode =
-        "attribute vec3 aVertexPosition;" +
-                "attribute vec4 aVertexColor;" +
-                "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
-                "void main() {" +
-                "   gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
-                "   vColor=aVertexColor;" +
-                "}"
-    private val fragmentShaderCode =
-        "precision lowp float;" +
-                "varying vec4 vColor; " +
-                "void main() {" +
-                "   gl_FragColor=vColor;" +  //the fragment color
-                "}"
+class MySphere {
+    private val vertexShaderCode = "attribute vec3 aVertexPosition;" +
+            "attribute vec4 aVertexColor;" +
+            "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
+            "void main() {" +
+            "gl_Position = uMVPMatrix *vec4(aVertexPosition,1.0);" +
+            "vColor=aVertexColor;" +
+            "}"
+    private val fragmentShaderCode = "precision lowp float;varying vec4 vColor; " +
+            "void main() {" +
+            "gl_FragColor=vColor;" +  //the fragment color
+            "}"
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
     private val indexBuffer: IntBuffer
@@ -44,7 +41,7 @@ class Sphere {
         val pColor = FloatArray(65535)
         var vertexIndex = 0
         var colorIndex = 0
-        var index = 0
+        var indx = 0
         val dist = 0f
         for (row in 0..noLatitude) {
             val theta = row * Math.PI / noLatitude
@@ -72,16 +69,16 @@ class Sphere {
             for (col in 0 until noLongitude) {
                 val first = row * (noLongitude + 1) + col
                 val second = first + noLongitude + 1
-                pIndex[index++] = first
-                pIndex[index++] = second
-                pIndex[index++] = first + 1
-                pIndex[index++] = second
-                pIndex[index++] = second + 1
-                pIndex[index++] = first + 1
+                pIndex[indx++] = first
+                pIndex[indx++] = second
+                pIndex[indx++] = first + 1
+                pIndex[indx++] = second
+                pIndex[indx++] = second + 1
+                pIndex[indx++] = first + 1
             }
         }
         sphereVertex = vertices.copyOf(vertexIndex)
-        sphereIndex = pIndex.copyOf(index)
+        sphereIndex = pIndex.copyOf(indx)
         sphereColor = pColor.copyOf(colorIndex)
     }
 
@@ -105,8 +102,9 @@ class Sphere {
         colorBuffer.position(0)
         //////////////////////
         // prepare shaders and OpenGL program
-        val vertexShader = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
-        val fragmentShader = MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
+        val vertexShader: Int = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
+        val fragmentShader: Int =
+            MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
         mProgram = GLES32.glCreateProgram() // create empty OpenGL Program
         GLES32.glAttachShader(mProgram, vertexShader) // add the vertex shader to program
         GLES32.glAttachShader(mProgram, fragmentShader) // add the fragment shader to program
@@ -148,20 +146,12 @@ class Sphere {
         //===================
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
-            mPositionHandle,
-            COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            vertexStride,
-            vertexBuffer
+            mPositionHandle, COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT, false, vertexStride, vertexBuffer
         )
         GLES32.glVertexAttribPointer(
-            mColorHandle,
-            COLOR_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            colorStride,
-            colorBuffer
+            mColorHandle, COLOR_PER_VERTEX,
+            GLES32.GL_FLOAT, false, colorStride, colorBuffer
         )
         // Draw the sphere
         GLES32.glDrawElements(

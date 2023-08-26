@@ -7,22 +7,20 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.math.pow
 
-class CharacterS {
-    private val vertexShaderCode =
-        "attribute vec3 aVertexPosition;" +  //vertex of an object
-                "attribute vec4 aVertexColor;" +  //the colour  of the object
-                "uniform mat4 uMVPMatrix;" +  //model view  projection matrix
-                "varying vec4 vColor;" +  //variable to be accessed by the fragment shader
-                "void main() {" +
-                "   gl_Position = uMVPMatrix* vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
-                "   vColor=aVertexColor;" +
-                "}" //get the colour from the application program
+class MyCharacterS {
+    private val vertexShaderCode = "attribute vec3 aVertexPosition;" +  //vertex of an object
+            " attribute vec4 aVertexColor;" +  //the colour  of the object
+            "     uniform mat4 uMVPMatrix;" +  //model view  projection matrix
+            "    varying vec4 vColor;" +  //variable to be accessed by the fragment shader
+            "void main() {" +
+            "        gl_Position = uMVPMatrix* vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
+            "        vColor=aVertexColor;}" //get the colour from the application program
     private val fragmentShaderCode =
         "precision lowp float;" +  //need to set to low in order to show the depth map
                 "varying vec4 vColor;" +  //variable from the vertex shader
                 "void main() {" +
-                "   float depth=1.0-gl_FragCoord.z;" +  //to show closer surface to be brighter, and further away surface darker
-                "   gl_FragColor = vColor;" +
+                "float depth=1.0-gl_FragCoord.z;" +  //to show closer surface to be brighter, and further away surface darker
+                "gl_FragColor = vColor;" +
                 "}"
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
@@ -46,7 +44,7 @@ class CharacterS {
         val pIndex = IntArray(65535)
         var vertexIndex = 0
         var colorIndex = 0
-        var index = 0
+        var indx = 0
         var controlPtIndex = 0
         val noSegments = controlPtsRight.size / 2 / 3
         var t: Double
@@ -134,33 +132,33 @@ class CharacterS {
         var v7 = 7
         while (v7 < vertexIndex / 3) {
             //the front
-            pIndex[index++] = v0
-            pIndex[index++] = v1
-            pIndex[index++] = v2
-            pIndex[index++] = v2
-            pIndex[index++] = v1
-            pIndex[index++] = v3
+            pIndex[indx++] = v0
+            pIndex[indx++] = v1
+            pIndex[indx++] = v2
+            pIndex[indx++] = v2
+            pIndex[indx++] = v1
+            pIndex[indx++] = v3
             //back
-            pIndex[index++] = v4
-            pIndex[index++] = v5
-            pIndex[index++] = v6
-            pIndex[index++] = v6
-            pIndex[index++] = v5
-            pIndex[index++] = v7
+            pIndex[indx++] = v4
+            pIndex[indx++] = v5
+            pIndex[indx++] = v6
+            pIndex[indx++] = v6
+            pIndex[indx++] = v5
+            pIndex[indx++] = v7
             //bottom
-            pIndex[index++] = v4
-            pIndex[index++] = v0
-            pIndex[index++] = v2
-            pIndex[index++] = v2
-            pIndex[index++] = v6
-            pIndex[index++] = v4
+            pIndex[indx++] = v4
+            pIndex[indx++] = v0
+            pIndex[indx++] = v2
+            pIndex[indx++] = v2
+            pIndex[indx++] = v6
+            pIndex[indx++] = v4
             //top
-            pIndex[index++] = v5
-            pIndex[index++] = v1
-            pIndex[index++] = v3
-            pIndex[index++] = v3
-            pIndex[index++] = v7
-            pIndex[index++] = v5
+            pIndex[indx++] = v5
+            pIndex[indx++] = v1
+            pIndex[indx++] = v3
+            pIndex[indx++] = v3
+            pIndex[indx++] = v7
+            pIndex[indx++] = v5
             v0 += 4
             v1 += 4
             v2 += 4
@@ -171,22 +169,21 @@ class CharacterS {
             v7 += 4
         }
         //cover bottom end
-        pIndex[index++] = 1
-        pIndex[index++] = 0
-        pIndex[index++] = 2
-        pIndex[index++] = 2
-        pIndex[index++] = 3
-        pIndex[index++] = 1
+        pIndex[indx++] = 1
+        pIndex[indx++] = 0
+        pIndex[indx++] = 2
+        pIndex[indx++] = 2
+        pIndex[indx++] = 3
+        pIndex[indx++] = 1
         //cover the top end
-        pIndex[index++] = v1
-        pIndex[index++] = v0
-        pIndex[index++] = v4
-        pIndex[index++] = v4
-        pIndex[index++] = v5
-        pIndex[index++] = v1
-
+        pIndex[indx++] = v1
+        pIndex[indx++] = v0
+        pIndex[indx++] = v4
+        pIndex[indx++] = v4
+        pIndex[indx++] = v5
+        pIndex[indx++] = v1
         charSVertex = vertices.copyOf(vertexIndex)
-        charSIndex = pIndex.copyOf(index)
+        charSIndex = pIndex.copyOf(indx)
         charSColor = color.copyOf(colorIndex)
     }
 
@@ -243,8 +240,9 @@ class CharacterS {
         indexBuffer.put(charSIndex)
         indexBuffer.position(0)
         // prepare shaders and OpenGL program
-        val vertexShader = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
-        val fragmentShader = MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
+        val vertexShader: Int = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
+        val fragmentShader: Int =
+            MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
         mProgram = GLES32.glCreateProgram() // create empty OpenGL Program
         GLES32.glAttachShader(mProgram, vertexShader) // add the vertex shader to program
         GLES32.glAttachShader(mProgram, fragmentShader) // add the fragment shader to program
@@ -285,20 +283,12 @@ class CharacterS {
         GLES32.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0)
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
-            mPositionHandle,
-            COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            vertexStride,
-            vertexBuffer
+            mPositionHandle, COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT, false, vertexStride, vertexBuffer
         )
         GLES32.glVertexAttribPointer(
-            mColorHandle,
-            COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            colorStride,
-            colorBuffer
+            mColorHandle, COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT, false, colorStride, colorBuffer
         )
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,

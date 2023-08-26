@@ -6,22 +6,18 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class CharacterA {
-    private val vertexShaderCode =
-        "attribute vec3 aVertexPosition;" +  //vertex of an object
-                "attribute vec4 aVertexColor;" +  //the colour  of the object
-                "uniform mat4 uMVPMatrix;" +  //model view  projection matrix
-                "varying vec4 vColor;" +  //variable to be accessed by the fragment shader
-                "void main() {" +
-                "   gl_Position = uMVPMatrix* vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
-                "   vColor=aVertexColor;" +
-                "}" //get the colour from the application program
-    private val fragmentShaderCode =
-        "precision mediump float;" +  //define the precision of float
-                "varying vec4 vColor;" +  //variable from the vertex shader
-                "void main() {" +
-                "   gl_FragColor = vColor;" +
-                "}" //change the colour based on the variable from the vertex shader
+class MyCharacterA {
+    private val vertexShaderCode = "attribute vec3 aVertexPosition;" +  //vertex of an object
+            " attribute vec4 aVertexColor;" +  //the colour  of the object
+            "     uniform mat4 uMVPMatrix;" +  //model view  projection matrix
+            "    varying vec4 vColor;" +  //variable to be accessed by the fragment shader
+            "    void main() {" +
+            "        gl_Position = uMVPMatrix* vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
+            "        vColor=aVertexColor;}" //get the colour from the application program
+    private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
+            "varying vec4 vColor;" +  //variable from the vertex shader
+            "void main() {" +
+            "   gl_FragColor = vColor; }" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
     private val indexBuffer: IntBuffer
@@ -33,17 +29,40 @@ class CharacterA {
             : Int
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
     private val colorStride = COLOR_PER_VERTEX * 4 //4 bytes per vertex
-
+    private var charAVertex = floatArrayOf(
+        -0.2f, 1.0f, -0.3f,
+        -0.2f, 1.0f, 0.3f,
+        0.2f, 1.0f, -0.3f,
+        0.2f, 1.0f, 0.3f,
+        -1.0f, -1.0f, -0.5f,
+        -1.0f, -1.0f, 0.5f,
+        -0.6f, -1.0f, -0.5f,
+        -0.6f, -1.0f, 0.5f,
+        0.6f, -1.0f, 0.5f,
+        0.6f, -1.0f, -0.5f,
+        1.0f, -1.0f, 0.5f,
+        1.0f, -1.0f, -0.5f,
+        0.0f, 0.8f, 0.3f,
+        0.0f, 0.8f, -0.3f,
+        0.25f, 0.1f, 0.382f,
+        0.25f, 0.1f, -0.382f,
+        -0.25f, 0.1f, 0.382f,
+        -0.25f, 0.1f, -0.382f,
+        0.32f, -0.1f, 0.41f,
+        0.32f, -0.1f, -0.41f,
+        -0.32f, -0.1f, 0.41f,
+        -0.32f, -0.1f, -0.41f
+    )
 
     init {
         // initialize vertex byte buffer for shape coordinates
         val bb =
-            ByteBuffer.allocateDirect(CharAVertex.size * 4) // (# of coordinate values * 4 bytes per float)
+            ByteBuffer.allocateDirect(charAVertex.size * 4) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(CharAVertex)
+        vertexBuffer.put(charAVertex)
         vertexBuffer.position(0)
-        vertexCount = CharAVertex.size / COORDS_PER_VERTEX
+        vertexCount = charAVertex.size / COORDS_PER_VERTEX
         val cb =
             ByteBuffer.allocateDirect(CharAColor.size * 4) // (# of coordinate values * 4 bytes per float)
         cb.order(ByteOrder.nativeOrder())
@@ -55,8 +74,9 @@ class CharacterA {
         indexBuffer.put(CharIndex)
         indexBuffer.position(0)
         // prepare shaders and OpenGL program
-        val vertexShader = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
-        val fragmentShader = MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
+        val vertexShader: Int = MyRenderer.loadShader(GLES32.GL_VERTEX_SHADER, vertexShaderCode)
+        val fragmentShader: Int =
+            MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
         mProgram = GLES32.glCreateProgram() // create empty OpenGL Program
         GLES32.glAttachShader(mProgram, vertexShader) // add the vertex shader to program
         GLES32.glAttachShader(mProgram, fragmentShader) // add the fragment shader to program
@@ -89,20 +109,12 @@ class CharacterA {
         MyRenderer.checkGlError("glUniformMatrix4fv")
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
-            mPositionHandle,
-            COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            vertexStride,
-            vertexBuffer
+            mPositionHandle, COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT, false, vertexStride, vertexBuffer
         )
         GLES32.glVertexAttribPointer(
-            mColorHandle,
-            COORDS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            colorStride,
-            colorBuffer
+            mColorHandle, COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT, false, colorStride, colorBuffer
         )
         // Draw the 3D character A
         GLES32.glDrawElements(
@@ -117,7 +129,7 @@ class CharacterA {
         // number of coordinates per vertex in this array
         const val COORDS_PER_VERTEX = 3
         const val COLOR_PER_VERTEX = 4
-        private val CharIndex = intArrayOf(
+        private var CharIndex = intArrayOf(
             0, 1, 2, 2, 3, 1,
             0, 4, 5, 5, 1, 0,
             4, 5, 6, 6, 7, 5,
@@ -134,7 +146,7 @@ class CharacterA {
             14, 18, 20, 20, 16, 14,
             15, 19, 21, 21, 17, 15
         )
-        private val CharAColor = floatArrayOf(
+        private var CharAColor = floatArrayOf(
             0.0f, 0.0f, 1.0f, 1.0f,  //0
             0.0f, 0.0f, 1.0f, 1.0f,  //1
             0.0f, 0.0f, 1.0f, 1.0f,  //2
@@ -157,30 +169,6 @@ class CharacterA {
             0.0f, 1.0f, 0.0f, 1.0f,  //19
             0.0f, 1.0f, 0.0f, 1.0f,  //20
             0.0f, 1.0f, 0.0f, 1.0f
-        )
-        private val CharAVertex = floatArrayOf(
-            -0.2f, 1.0f, -0.3f,
-            -0.2f, 1.0f, 0.3f,
-            0.2f, 1.0f, -0.3f,
-            0.2f, 1.0f, 0.3f,
-            -1.0f, -1.0f, -0.5f,
-            -1.0f, -1.0f, 0.5f,
-            -0.6f, -1.0f, -0.5f,
-            -0.6f, -1.0f, 0.5f,
-            0.6f, -1.0f, 0.5f,
-            0.6f, -1.0f, -0.5f,
-            1.0f, -1.0f, 0.5f,
-            1.0f, -1.0f, -0.5f,
-            0.0f, 0.8f, 0.3f,
-            0.0f, 0.8f, -0.3f,
-            0.25f, 0.1f, 0.382f,
-            0.25f, 0.1f, -0.382f,
-            -0.25f, 0.1f, 0.382f,
-            -0.25f, 0.1f, -0.382f,
-            0.32f, -0.1f, 0.41f,
-            0.32f, -0.1f, -0.41f,
-            -0.32f, -0.1f, 0.41f,
-            -0.32f, -0.1f, -0.41f
         )
     }
 }

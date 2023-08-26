@@ -36,17 +36,17 @@ class MyView(context: Context?) : GLSurfaceView(context) {
 //                mAngle++
 //                if (mAngle >= 360) mAngle = 0F
 
-                mRenderer.setLightLocation(pX, pY, pZ)
-                requestRender()
-                if (dir) {
-                    pX += 0.1F
-                    pY += 0.1F
-                    if (pX >= 10) dir = false
-                } else {
-                    pX -= 0.1F
-                    pY -= 0.1F
-                    if (pX <= -10) dir = true
-                }
+//                mRenderer.setLightLocation(pX, pY, pZ)
+//                requestRender()
+//                if (dir) {
+//                    pX += 0.1F
+//                    pY += 0.1F
+//                    if (pX >= 10) dir = false
+//                } else {
+//                    pX -= 0.1F
+//                    pY -= 0.1F
+//                    if (pX <= -10) dir = true
+//                }
             }
         }
     }
