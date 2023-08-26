@@ -24,6 +24,11 @@ class ArbitraryShape {
             "uniform vec3 uAttenuation;" +
             "uniform vec4 uAmbientColor;" +
             "varying vec4 vAmbientColor;" +
+            "uniform vec4 uSpecularColor;" +
+            "varying vec4 vSpecularColor;" +
+            "varying float vSpecularLightWeighting;" +
+            "uniform vec3 uSpecularLightLocation;" +
+            "uniform float uMaterialShininess;" +
             "void main() {" +
             "   vec4 mvPosition = uMVPMatrix * vec4(aVertexPosition,1.0);" +
             "   vec3 lightDirection = normalize(uPointLightingLocation - mvPosition.xyz);" +
@@ -39,6 +44,11 @@ class ArbitraryShape {
             "   vDiffuseLightWeighting = attenuation * max(dot(transformedNormal, diffuseLightDirection), 0.0);" +
             "   vColor = aVertexColor;" +
             "   vAmbientColor = uAmbientColor;" +
+            "   vSpecularColor = uSpecularColor;" +
+            "   vec3 viewDirection = normalize(-mvPosition.xyz);" +
+            "   vec3 specularLightDirection = normalize(uSpecularLightLocation - mvPosition.xyz);" +
+            "   vec3 reflectionDirection = reflect(-specularLightDirection, transformedNormal);" +
+            "   vSpecularLightWeighting = attenuation * pow(max(dot(reflectionDirection, viewDirection), 0.0), uMaterialShininess);" +
             "}" //get the colour from the application program
     private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
             "varying vec4 vColor;" +  //variable from the vertex shader
@@ -46,11 +56,14 @@ class ArbitraryShape {
             "varying vec4 vDiffuseColor;" +
             "varying float vDiffuseLightWeighting;" +
             "varying vec4 vAmbientColor;" +
+            "varying vec4 vSpecularColor;" +
+            "varying float vSpecularLightWeighting;" +
             //---------
             "void main() {" +
             "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
+            "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
 //            "   gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
-            "   gl_FragColor = vColor * vAmbientColor + diffuseColor;" +
+            "   gl_FragColor = vColor * vAmbientColor + specularColor + diffuseColor;" +
             "}" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
@@ -99,6 +112,10 @@ class ArbitraryShape {
     private val attenuationHandle: Int
 
     private val uAmbientColorHandle: Int
+
+    private val specularColorHandle: Int
+    private val specularLightLocationHandle: Int
+    private val materialShininessHandle: Int
 
     private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
         val normals1 = FloatArray(65535)
@@ -303,6 +320,15 @@ class ArbitraryShape {
         AmbientColor[2] = 0.3f
         AmbientColor[3] = 0.3f
 
+        SpecularColor[0] = 0F
+        SpecularColor[1] = 0F
+        SpecularColor[2] = 1F
+        SpecularColor[3] = 1F
+
+        SpecularLocation[0] = DiffuseLightLocation[0]
+        SpecularLocation[1] = DiffuseLightLocation[1]
+        SpecularLocation[2] = DiffuseLightLocation[2]
+
         createSphere(2f, 30, 30)
 
         val nb1 = ByteBuffer.allocateDirect(sphere1Normal.size * 4)
@@ -414,9 +440,18 @@ class ArbitraryShape {
 
         uAmbientColorHandle = GLES32.glGetUniformLocation(mProgram, "uAmbientColor")
         MyRenderer.checkGlError("check - glGetUniformLocation - uAmbientColor")
+
+        specularColorHandle = GLES32.glGetUniformLocation(mProgram, "uSpecularColor")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uSpecularColor")
+        specularLightLocationHandle =
+            GLES32.glGetUniformLocation(mProgram, "uSpecularLightLocation")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uSpecularLightLocation")
+        materialShininessHandle = GLES32.glGetUniformLocation(mProgram, "uMaterialShininess")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uMaterialShininess")
         //---------
         // get handle to shape's transformation matrix
-        pointLightingLocationHandle = GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
+        pointLightingLocationHandle =
+            GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
     }
 
@@ -430,7 +465,18 @@ class ArbitraryShape {
         GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)
         GLES32.glUniform3fv(attenuationHandle, 1, Attenuation, 0)
         GLES32.glUniform4fv(uAmbientColorHandle, 1, AmbientColor, 0)
-        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, normal1Buffer)
+        GLES32.glVertexAttribPointer(
+            mNormalHandle,
+            COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            vertexStride,
+            normal1Buffer
+        )
+
+        GLES32.glUniform4fv(specularColorHandle, 1, SpecularColor, 0)
+        GLES32.glUniform1f(materialShininessHandle, MaterialShininess)
+        GLES32.glUniform3fv(specularLightLocationHandle, 1, SpecularLocation, 0)
 
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
@@ -507,5 +553,9 @@ class ArbitraryShape {
         private val Attenuation = FloatArray(3)
 
         private val AmbientColor = FloatArray(4)
+
+        private val SpecularColor = FloatArray(4)
+        private const val MaterialShininess = 5F
+        private val SpecularLocation = FloatArray(3)
     }
 }
