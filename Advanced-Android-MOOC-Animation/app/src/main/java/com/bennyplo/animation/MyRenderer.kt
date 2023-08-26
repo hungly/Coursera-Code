@@ -18,6 +18,8 @@ class MyRenderer : GLSurfaceView.Renderer {
     private var mSphere: Sphere? = null
     private var mArbitrary: ArbitraryShape? = null
 
+    private var mAngle: Float = 0F
+
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
         GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
@@ -49,7 +51,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         ) //set the model view projection matrix to an identity matrix
         Matrix.setIdentityM(mMVMatrix, 0) //set the model view  matrix to an identity matrix
         Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
-        Matrix.setRotateM(mRotationMatrix2, 0, 30f, 0f, 1f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrix2, 0, mAngle, 1f, 1f, 0f) //rotate around the y-axis
         Matrix.setRotateM(mRotationMatrix, 0, 30f, 1f, 0f, 0f) //rotate around the x-axis
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
@@ -68,7 +70,11 @@ class MyRenderer : GLSurfaceView.Renderer {
 //        mCharA?.draw(mMVPMatrix)
 //        mCharS?.draw(mMVPMatrix);
 //        mSphere?.draw(mMVPMatrix);
-//        mArbitrary?.draw(mMVPMatrix);
+        mArbitrary?.draw(mMVPMatrix);
+    }
+
+    fun setAngle(angle:Float) {
+        mAngle = angle
     }
 
     companion object {
