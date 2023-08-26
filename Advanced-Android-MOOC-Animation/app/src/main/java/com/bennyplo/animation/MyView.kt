@@ -77,17 +77,17 @@ class MyView(context: Context?) : GLSurfaceView(context) {
         return true
     }
 
-    override fun onPause() {
-        super.onPause()
-        isRotating = false
-        rotateJob?.cancel()
-    }
+//    override fun onPause() {
+//        super.onPause()
+//        isRotating = false
+//        rotateJob?.cancel()
+//    }
 
-    override fun onResume() {
-        super.onResume()
-        isRotating = true
-        startRotating()
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        isRotating = true
+//        startRotating()
+//    }
 
     companion object {
         private const val TOUCH_SCALE_FACTOR = 180F / 320
