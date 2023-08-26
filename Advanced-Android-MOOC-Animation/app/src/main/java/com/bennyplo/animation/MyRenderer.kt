@@ -89,6 +89,10 @@ class MyRenderer : GLSurfaceView.Renderer {
 
     fun getAngleY() = mAngleY
 
+    fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
+        mArbitrary?.setLightLocation(pX, pY, pZ)
+    }
+
     companion object {
         fun checkGlError(glOperation: String) {
             var error: Int

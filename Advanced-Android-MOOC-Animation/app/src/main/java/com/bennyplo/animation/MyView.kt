@@ -21,15 +21,32 @@ class MyView(context: Context?) : GLSurfaceView(context) {
     private var mPreviousX = 0F
     private var mPreviousY = 0F
 
+    private var pX = 0F
+    private var pY = 0F
+    private var pZ = 0F
+    private var dir = true
+
     private fun startRotating() {
         rotateJob?.cancel()
         rotateJob = CoroutineScope(Dispatchers.Default + SupervisorJob()).launch {
             while (isRotating) {
                 delay(10)
-                mRenderer.setAngleX(mAngle)
+//                mRenderer.setAngleX(mAngle)
+//                requestRender()
+//                mAngle++
+//                if (mAngle >= 360) mAngle = 0F
+
+                mRenderer.setLightLocation(pX, pY, pZ)
                 requestRender()
-                mAngle++
-                if (mAngle >= 360) mAngle = 0F
+                if (dir) {
+                    pX += 0.1F
+                    pY += 0.1F
+                    if (pX >= 10) dir = false
+                } else {
+                    pX -= 0.1F
+                    pY -= 0.1F
+                    if (pX <= -10) dir = true
+                }
             }
         }
     }
@@ -60,17 +77,17 @@ class MyView(context: Context?) : GLSurfaceView(context) {
         return true
     }
 
-//    override fun onPause() {
-//        super.onPause()
-//        isRotating = false
-//        rotateJob?.cancel()
-//    }
+    override fun onPause() {
+        super.onPause()
+        isRotating = false
+        rotateJob?.cancel()
+    }
 
-//    override fun onResume() {
-//        super.onResume()
-//        isRotating = true
-//        startRotating()
-//    }
+    override fun onResume() {
+        super.onResume()
+        isRotating = true
+        startRotating()
+    }
 
     companion object {
         private const val TOUCH_SCALE_FACTOR = 180F / 320

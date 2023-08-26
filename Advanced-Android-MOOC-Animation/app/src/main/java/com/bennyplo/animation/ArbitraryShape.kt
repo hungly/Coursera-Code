@@ -14,14 +14,23 @@ class ArbitraryShape {
             "attribute vec4 aVertexColor;" +  //the colour  of the object
             "uniform mat4 uMVPMatrix;" +  //model view  projection matrix
             "varying vec4 vColor;" +  //variable to be accessed by the fragment shader
+            "uniform vec3 uPointLightingLocation;" +
+            "varying float vPointLightWeighting;" +
             "void main() {" +
-            "gl_Position = uMVPMatrix* vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
-            "vColor=aVertexColor;}" //get the colour from the application program
+            "   vec4 mvPosition = uMVPMatrix * vec4(aVertexPosition,1.0);" +
+            "   vec3 lightDirection = normalize(uPointLightingLocation - mvPosition.xyz);" +
+            "   float dist_from_light = distance(uPointLightingLocation, mvPosition.xyz);" +
+            "   vPointLightWeighting = 10.0 / (dist_from_light * dist_from_light);" +
+            "   gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);" +  //calculate the position of the vertex
+            "   vColor=aVertexColor;" +
+            "}" //get the colour from the application program
     private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
             "varying vec4 vColor;" +  //variable from the vertex shader
+            "varying float vPointLightWeighting;" +
             //---------
             "void main() {" +
-            "   gl_FragColor = vColor; }" //change the colour based on the variable from the vertex shader
+            "   gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
+            "}" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
     private val indexBuffer: IntBuffer
@@ -37,6 +46,8 @@ class ArbitraryShape {
     private val mMVPMatrixHandle: Int
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
     private val colorStride = COLOR_PER_VERTEX * 4 //4 bytes per vertex
+
+    private val pointLightingLocationHandle: Int
 
     // 1st sphere
     private lateinit var sphereVertex: FloatArray
@@ -199,6 +210,9 @@ class ArbitraryShape {
     }
 
     init {
+        lightLocation[0] = 2F
+        lightLocation[1] = 2F
+        lightLocation[2] = 0F
         createSphere(2f, 30, 30)
         // initialize vertex byte buffer for shape coordinates
         val bb =
@@ -278,13 +292,16 @@ class ArbitraryShape {
         )
         //---------
         // get handle to shape's transformation matrix
+        pointLightingLocationHandle = GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
+        MyRenderer.checkGlError("glGetUniformLocation")
     }
 
     fun draw(mvpMatrix: FloatArray?) {
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0)
         //---------
+        GLES32.glUniform3fv(pointLightingLocationHandle, 1, lightLocation, 0)
         //set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             mPositionHandle, COORDS_PER_VERTEX,
@@ -336,12 +353,18 @@ class ArbitraryShape {
         )
     }
 
+    fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
+        lightLocation[0] = pX
+        lightLocation[1] = pY
+        lightLocation[2] = pZ
+    }
+
     companion object {
         //---------
         // number of coordinates per vertex in this array
         const val COORDS_PER_VERTEX = 3
         const val COLOR_PER_VERTEX = 4
 
-        private var lightLocation = FloatArray(3) //point light source location
+        private val lightLocation = FloatArray(3)
     }
 }
