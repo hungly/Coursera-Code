@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
-import javax.microedition.khronos.opengles.GL
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -23,6 +22,8 @@ class ArbitraryShape {
             "varying vec4 vDiffuseColor;" +
             "varying float vDiffuseLightWeighting;" +
             "uniform vec3 uAttenuation;" +
+            "uniform vec4 uAmbientColor;" +
+            "varying vec4 vAmbientColor;" +
             "void main() {" +
             "   vec4 mvPosition = uMVPMatrix * vec4(aVertexPosition,1.0);" +
             "   vec3 lightDirection = normalize(uPointLightingLocation - mvPosition.xyz);" +
@@ -36,18 +37,20 @@ class ArbitraryShape {
             "   float diff_light_dist = length(vertexToLightSource);" +
             "   float attenuation = 1.0 / (uAttenuation.x + uAttenuation.y * diff_light_dist + uAttenuation.z * diff_light_dist * diff_light_dist);" +
             "   vDiffuseLightWeighting = attenuation * max(dot(transformedNormal, diffuseLightDirection), 0.0);" +
-            "   vColor=aVertexColor;" +
+            "   vColor = aVertexColor;" +
+            "   vAmbientColor = uAmbientColor;" +
             "}" //get the colour from the application program
     private val fragmentShaderCode = "precision mediump float;" +  //define the precision of float
             "varying vec4 vColor;" +  //variable from the vertex shader
             "varying float vPointLightWeighting;" +
             "varying vec4 vDiffuseColor;" +
             "varying float vDiffuseLightWeighting;" +
+            "varying vec4 vAmbientColor;" +
             //---------
             "void main() {" +
             "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
 //            "   gl_FragColor = vec4(vColor.xyz * vPointLightWeighting, 1);" +
-            "   gl_FragColor = vColor + diffuseColor;" +
+            "   gl_FragColor = vColor * vAmbientColor + diffuseColor;" +
             "}" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
     private val colorBuffer: FloatBuffer
@@ -94,6 +97,8 @@ class ArbitraryShape {
     private val diffuseLightLocationHandle: Int
     private val diffuseColorHandle: Int
     private val attenuationHandle: Int
+
+    private val uAmbientColorHandle: Int
 
     private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
         val normals1 = FloatArray(65535)
@@ -280,9 +285,9 @@ class ArbitraryShape {
         LightLocation[1] = 2F
         LightLocation[2] = 0F
 
-        DiffuseLightLocation[0] = 3F;
-        DiffuseLightLocation[1] = 2F;
-        DiffuseLightLocation[2] = 2F;
+        DiffuseLightLocation[0] = 3F
+        DiffuseLightLocation[1] = 2F
+        DiffuseLightLocation[2] = 2F
 
         DiffuseColor[0] = 1F
         DiffuseColor[1] = 1F
@@ -292,6 +297,11 @@ class ArbitraryShape {
         Attenuation[0] = 1F
         Attenuation[1] = 0.35F
         Attenuation[2] = 0.44F
+
+        AmbientColor[0] = 0.3f
+        AmbientColor[1] = 0.3f
+        AmbientColor[2] = 0.3f
+        AmbientColor[3] = 0.3f
 
         createSphere(2f, 30, 30)
 
@@ -401,6 +411,9 @@ class ArbitraryShape {
         MyRenderer.checkGlError("check - glGetUniformLocation - uDiffuseColor")
         attenuationHandle = GLES32.glGetUniformLocation(mProgram, "uAttenuation")
         MyRenderer.checkGlError("check - glGetUniformLocation - uAttenuation")
+
+        uAmbientColorHandle = GLES32.glGetUniformLocation(mProgram, "uAmbientColor")
+        MyRenderer.checkGlError("check - glGetUniformLocation - uAmbientColor")
         //---------
         // get handle to shape's transformation matrix
         pointLightingLocationHandle = GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
@@ -416,6 +429,7 @@ class ArbitraryShape {
         GLES32.glUniform3fv(diffuseLightLocationHandle, 1, DiffuseLightLocation, 0)
         GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)
         GLES32.glUniform3fv(attenuationHandle, 1, Attenuation, 0)
+        GLES32.glUniform4fv(uAmbientColorHandle, 1, AmbientColor, 0)
         GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, normal1Buffer)
 
         //set the attribute of the vertex to point to the vertex buffer
@@ -491,5 +505,7 @@ class ArbitraryShape {
         private val DiffuseLightLocation = FloatArray(3)
         private val DiffuseColor = FloatArray(4)
         private val Attenuation = FloatArray(3)
+
+        private val AmbientColor = FloatArray(4)
     }
 }
