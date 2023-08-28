@@ -39,6 +39,7 @@ class MyArbitraryShape(context: Context?) {
     private lateinit var sphere2Vertex: FloatArray
 
     private lateinit var textureCoordinateData: FloatArray
+    private lateinit var ringTextureCoordinateData: FloatArray
     private val attenuateHandle: Int
     private val color2Buffer: FloatBuffer
     private val colorBuffer: FloatBuffer
@@ -79,6 +80,7 @@ class MyArbitraryShape(context: Context?) {
     private val mTextureCoordHandle: Int
     private val mEarthTextureImageHandle: Int
     private val mSunTextureImageHandle: Int
+    private val mRingTextureImageHandle: Int
     private val mTextureSamplerHandle: Int
     private val materialShininessHandle: Int
     private val normal1Buffer: FloatBuffer
@@ -89,6 +91,7 @@ class MyArbitraryShape(context: Context?) {
     private val ringVertexBuffer: FloatBuffer
     private val specularColorHandle: Int
     private val textureBuffer: FloatBuffer
+    private val ringTextureBuffer: FloatBuffer
     private val uAmbientColorHandle: Int
     private val useTextureHandle: Int
     private val vertex2Buffer: FloatBuffer
@@ -294,12 +297,31 @@ class MyArbitraryShape(context: Context?) {
             GLES32.GL_NEAREST
         )
 
+        mRingTextureImageHandle = loadTextureFromResource(R.drawable.gradient, context)
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MIN_FILTER,
+            GLES32.GL_NEAREST
+        )
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MAG_FILTER,
+            GLES32.GL_NEAREST
+        )
 
         val tb = ByteBuffer.allocateDirect(textureCoordinateData.size * 4)
         tb.order(ByteOrder.nativeOrder())
         textureBuffer = tb.asFloatBuffer()
         textureBuffer.put(textureCoordinateData)
         textureBuffer.position(0)
+
+        val rtb = ByteBuffer.allocateDirect(ringTextureCoordinateData.size * 4)
+        rtb.order(ByteOrder.nativeOrder())
+        ringTextureBuffer = rtb.asFloatBuffer()
+        ringTextureBuffer.put(ringTextureCoordinateData)
+        ringTextureBuffer.position(0)
 
         mTextureCoordHandle = GLES32.glGetAttribLocation(mProgram, "aTextureCoordinate")
 
@@ -413,7 +435,20 @@ class MyArbitraryShape(context: Context?) {
         )
         ///////////////////
         //Rings
-        GLES32.glUniform1i(useTextureHandle, 0)
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE2)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mRingTextureImageHandle)
+        GLES32.glUniform1i(mTextureSamplerHandle, 2)
+        GLES32.glVertexAttribPointer(
+            mTextureCoordHandle,
+            MySphere.TEXTURE_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            MySphere.TextureStride,
+            ringTextureBuffer
+        )
+        GLES32.glUniform1i(useTextureHandle, 1)
+//        GLES32.glUniform1i(useTextureHandle, 0)
+
         GLES32.glVertexAttribPointer(
             mPositionHandle, COORDS_PER_VERTEX,
             GLES32.GL_FLOAT, false, vertexStride, ringVertexBuffer
@@ -456,6 +491,9 @@ class MyArbitraryShape(context: Context?) {
 
         val textureCoordinateData = FloatArray(65535)
         var textureIndex = 0
+        val ringTextureCoordinateData = FloatArray(65535)
+        var ringTextureIndex = 0
+        var pTextureLen = (noLongitude + 1) * 2 * 3
 
         val vertices = FloatArray(65535)
         val index = IntArray(65535)
@@ -521,6 +559,9 @@ class MyArbitraryShape(context: Context?) {
                     ringNormals[ringNormIndx++] = (radius * x).toFloat()
                     ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() + dist
                     ringNormals[ringNormIndx++] = (radius * z).toFloat()
+
+                    ringTextureCoordinateData[ringTextureIndex++] = col.toFloat() / noLongitude
+                    ringTextureCoordinateData[ringTextureIndex++] = 0f
                 }
                 if (row == 15) {
                     ringVertices[rVIndx++] = (radius * x).toFloat() / 2
@@ -534,6 +575,9 @@ class MyArbitraryShape(context: Context?) {
                     ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
                     ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
                     ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
+
+                    ringTextureCoordinateData[ringTextureIndex++] = col.toFloat() / noLongitude
+                    ringTextureCoordinateData[ringTextureIndex++] = 0.33f
                 }
                 if (row == 10) {
                     ringVertices[rVIndx++] = (radius * x).toFloat() / 2
@@ -547,6 +591,9 @@ class MyArbitraryShape(context: Context?) {
                     ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
                     ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
                     ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
+
+                    ringTextureCoordinateData[ringTextureIndex++] = col.toFloat() / noLongitude
+                    ringTextureCoordinateData[ringTextureIndex++] = 0.66f
                 }
                 if (row == 20) {
                     ringVertices[pLen++] = (radius * x).toFloat()
@@ -561,6 +608,9 @@ class MyArbitraryShape(context: Context?) {
                     ringNormals[pNormLen++] = (-radius * cosTheta).toFloat() - dist
                     ringNormals[pNormLen++] = (radius * z).toFloat()
                     //-------
+
+                    ringTextureCoordinateData[pTextureLen++] = col.toFloat() / noLongitude
+                    ringTextureCoordinateData[pTextureLen++] = 1f
                 }
                 tColor += tColorInc
 
@@ -616,6 +666,7 @@ class MyArbitraryShape(context: Context?) {
         }
 
         ringNormIndx = (noLongitude + 1) * 3 * 4
+        ringTextureIndex = (noLongitude + 1) * 2 * 4
 
         //set the buffers
         sphere1Vertex = vertices.copyOf(vertexIndex)
@@ -633,6 +684,7 @@ class MyArbitraryShape(context: Context?) {
         ringNormal = ringNormals.copyOf(ringNormIndx)
 
         this.textureCoordinateData = textureCoordinateData.copyOf(textureIndex)
+        this.ringTextureCoordinateData = ringTextureCoordinateData.copyOf(ringTextureIndex)
     }
 
     private fun loadTextureFromResource(resourceId: Int, context: Context?): Int {
