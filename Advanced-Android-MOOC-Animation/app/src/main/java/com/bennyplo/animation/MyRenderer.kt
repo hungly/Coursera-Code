@@ -1,5 +1,6 @@
 package com.bennyplo.animation
 
+import android.content.Context
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
@@ -7,16 +8,17 @@ import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class MyRenderer : GLSurfaceView.Renderer {
+class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
     private val mMVPMatrix = FloatArray(16) //model view projection matrix
     private val mProjectionMatrix = FloatArray(16) //projection mastrix
     private val mViewMatrix = FloatArray(16) //view matrix
     private val mMVMatrix = FloatArray(16) //model view matrix
     private val mModelMatrix = FloatArray(16) //model  matrix
-    private var mCharA: MyCharacterA? = null
-    private var mCharS: MyCharacterS? = null
-    private var mSphere: MySphere? = null
-    private var mArbitrary: MyArbitraryShape? = null
+    private var mCharA: CharacterA? = null
+    private var mCharS: CharacterS? = null
+    private var mSphere: Sphere? = null
+    private var mArbitrary: ArbitraryShape? = null
+    private var mMySphere: MySphere? = null
 
     private var mAngleX: Float = 0F
     private var mAngleY: Float = 0F
@@ -24,10 +26,11 @@ class MyRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
         GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        mCharA = MyCharacterA()
-        mCharS = MyCharacterS()
-        mSphere = MySphere()
-        mArbitrary = MyArbitraryShape()
+        mCharA = CharacterA()
+        mCharS = CharacterS()
+        mSphere = Sphere()
+        mArbitrary = ArbitraryShape()
+        mMySphere = MySphere(context)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -72,9 +75,10 @@ class MyRenderer : GLSurfaceView.Renderer {
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
 //        mCharA?.draw(mMVPMatrix)
-//        mCharS?.draw(mMVPMatrix);
-//        mSphere?.draw(mMVPMatrix);
-        mArbitrary?.draw(mMVPMatrix);
+//        mCharS?.draw(mMVPMatrix)
+//        mSphere?.draw(mMVPMatrix)
+//        mArbitrary?.draw(mMVPMatrix)
+        mMySphere?.draw(mMVPMatrix)
     }
 
     fun setAngleX(angle: Float) {
@@ -90,7 +94,7 @@ class MyRenderer : GLSurfaceView.Renderer {
     fun getAngleY() = mAngleY
 
     fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
-        mArbitrary?.setLightLocation(pX, pY, pZ)
+//        mArbitrary?.setLightLocation(pX, pY, pZ)
     }
 
     companion object {
