@@ -20,8 +20,8 @@ class MySphere(private val context:Context?) {
                 "attribute vec3 aVertexNormal;" +//attribute variable for normal vectors
                 "attribute vec4 aVertexColor;" +//attribute variable for vertex colors
                 "uniform vec3 uLightSourceLocation;" +//location of the light source (for diffuse and specular light)
-                "uniform vec3 uAmbientColor;" +//uniform variable for Ambient color
-                "varying vec3 vAmbientColor;" +
+                "uniform vec4 uAmbientColor;" +//uniform variable for Ambient color
+                "varying vec4 vAmbientColor;" +
                 "uniform vec4 uDiffuseColor;" +//color of the diffuse light
                 "varying vec4 vDiffuseColor;" +
                 "varying float vDiffuseLightWeighting;" +//diffuse light intensity
@@ -56,7 +56,7 @@ class MySphere(private val context:Context?) {
     private val fragmentShaderCode =
         "precision mediump float;" +  //define the precision of float
                 "varying vec4 vColor;" +
-                "varying vec3 vAmbientColor;" +
+                "varying vec4 vAmbientColor;" +
                 "varying vec4 vDiffuseColor;" +
                 "varying float vDiffuseLightWeighting;" +
                 "varying vec4 vSpecularColor;" +
@@ -67,12 +67,12 @@ class MySphere(private val context:Context?) {
                 "void main() {" +
                 "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
                 "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
-                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
+//                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
                 "   if(uUseTexture) {" +
                 "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
-                "       gl_FragColor = fragmentColor + specularColor + diffuseColor;" +
+                "       gl_FragColor = fragmentColor + vAmbientColor + specularColor + diffuseColor;" +
                 "   } else {" +
-                "       gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
+                "       gl_FragColor = vColor + vAmbientColor + specularColor + diffuseColor;" +
                 "   };" +
                 "}" //change the colour based on the variable from the vertex shader
     private val vertexBuffer: FloatBuffer
@@ -186,8 +186,8 @@ class MySphere(private val context:Context?) {
         Attenuation[1] = 0.14F
         Attenuation[2] = 0.07F
 
-        SpecularColor[0] = 0F
-        SpecularColor[1] = 0F
+        SpecularColor[0] = 1F
+        SpecularColor[1] = 1F
         SpecularColor[2] = 1F
         SpecularColor[3] = 1F
 
@@ -311,7 +311,7 @@ class MySphere(private val context:Context?) {
         GLES32.glUniform3fv(lightLocationHandle, 1, LightLocation, 0)
         GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)
         GLES32.glUniform3fv(attenuateHandle, 1, Attenuation, 0)
-        GLES32.glUniform3f(uAmbientColorHandle, 0.6f, 0.6f, 0.6f)
+        GLES32.glUniform4f(uAmbientColorHandle, 0.1f, 0.1f, 0.1f, 1f)
         GLES32.glUniform4fv(specularColorHandle, 1, SpecularColor, 0)
         GLES32.glUniform1f(materialShininessHandle, MaterialShininess)
 
