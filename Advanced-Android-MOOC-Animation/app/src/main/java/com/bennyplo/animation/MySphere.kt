@@ -13,7 +13,59 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-class MySphere(private val context:Context?) {
+class MySphere(context: Context?) {
+
+    private lateinit var sphereColor: FloatArray
+    private lateinit var sphereIndex: IntArray
+    private lateinit var sphereNormal: FloatArray
+    private lateinit var sphereVertex: FloatArray
+    private lateinit var textureCoordinateData: FloatArray
+    private val attenuateHandle: Int
+    private val colorBuffer: FloatBuffer
+    private val colorStride = COLOR_PER_VERTEX * 4
+    private val diffuseColorHandle: Int
+
+    private val fragmentShaderCode =
+        "precision mediump float;" +  //define the precision of float
+                "varying vec4 vColor;" +
+                "varying vec4 vAmbientColor;" +
+                "varying vec4 vDiffuseColor;" +
+                "varying float vDiffuseLightWeighting;" +
+                "varying vec4 vSpecularColor;" +
+                "varying float vSpecularLightWeighting; " +
+                "varying vec2 vTextureCoordinate;" +
+                "uniform bool uUseTexture;" +
+                "uniform sampler2D uTextureSampler;" +
+                "void main() {" +
+                "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
+                "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
+//                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
+                "   if(uUseTexture) {" +
+                "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
+                "       gl_FragColor = fragmentColor + vAmbientColor + specularColor + diffuseColor;" +
+                "   } else {" +
+                "       gl_FragColor = vColor + vAmbientColor + specularColor + diffuseColor;" +
+                "   };" +
+                "}" //change the colour based on the variable from the vertex shader
+
+    private val indexBuffer: IntBuffer
+    private val lightLocationHandle: Int
+    private val mColorHandle: Int
+    private val mMVPMatrixHandle: Int
+    private val mNormalHandle: Int
+    private val mPositionHandle: Int
+    private val mProgram: Int
+    private val mTextureCoordHandle: Int
+    private val mTextureImageHandle: Int
+    private val mTextureSamplerHandle: Int
+    private val materialShininessHandle: Int
+    private val normalBuffer: FloatBuffer
+    private val specularColorHandle: Int
+    private val textureBuffer: FloatBuffer
+    private val uAmbientColorHandle: Int
+    private val useTextureHandle: Int
+    private val vertexBuffer: FloatBuffer
+
     private val vertexShaderCode =
         "attribute vec3 aVertexPosition;" +
                 "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
@@ -53,124 +105,8 @@ class MySphere(private val context:Context?) {
                 "   vColor = aVertexColor;" +
                 "   vTextureCoordinate = aTextureCoordinate;" +
                 "}" //get the colour from the application program
-    private val fragmentShaderCode =
-        "precision mediump float;" +  //define the precision of float
-                "varying vec4 vColor;" +
-                "varying vec4 vAmbientColor;" +
-                "varying vec4 vDiffuseColor;" +
-                "varying float vDiffuseLightWeighting;" +
-                "varying vec4 vSpecularColor;" +
-                "varying float vSpecularLightWeighting; " +
-                "varying vec2 vTextureCoordinate;" +
-                "uniform bool uUseTexture;" +
-                "uniform sampler2D uTextureSampler;" +
-                "void main() {" +
-                "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
-                "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
-//                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
-                "   if(uUseTexture) {" +
-                "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
-                "       gl_FragColor = fragmentColor + vAmbientColor + specularColor + diffuseColor;" +
-                "   } else {" +
-                "       gl_FragColor = vColor + vAmbientColor + specularColor + diffuseColor;" +
-                "   };" +
-                "}" //change the colour based on the variable from the vertex shader
-    private val vertexBuffer: FloatBuffer
-    private val colorBuffer: FloatBuffer
-    private val indexBuffer: IntBuffer
-    private val mProgram: Int
-    private val mPositionHandle: Int
-    private val mColorHandle: Int
-    private val mMVPMatrixHandle: Int
+
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
-    private val colorStride = COLOR_PER_VERTEX * 4
-
-    private lateinit var sphereVertex: FloatArray
-    private lateinit var sphereColor: FloatArray
-    private lateinit var sphereIndex: IntArray
-
-    private lateinit var sphereNormal: FloatArray
-    private val normalBuffer: FloatBuffer
-
-    private val mNormalHandle: Int
-    private val diffuseColorHandle: Int
-    private val lightLocationHandle: Int
-    private val uAmbientColorHandle: Int
-    private val specularColorHandle: Int
-    private val materialShininessHandle: Int
-    private val attenuateHandle: Int
-
-    private val textureBuffer: FloatBuffer
-    private val mTextureCoordHandle: Int
-    private val mTextureImageHandle: Int
-    private val mTextureSamplerHandle: Int
-    private val useTextureHandle: Int
-
-    private lateinit var textureCoordinateData: FloatArray
-
-
-    private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
-        val normals = FloatArray(65535)
-        var normalIndx = 0
-
-        val textureCoordinateData = FloatArray(65535)
-        var textureIndex = 0
-
-        val vertices = FloatArray(65535)
-        val pIndex = IntArray(65535)
-        val pColor = FloatArray(65535)
-        var vertexIndex = 0
-        var colorIndex = 0
-        var indx = 0
-        val dist = 0f
-        for (row in 0..noLatitude) {
-            val theta = row * Math.PI / noLatitude
-            val sinTheta = sin(theta)
-            val cosTheta = cos(theta)
-            var tColor = -0.5f
-            val tColorInc = 1f / (noLongitude + 1).toFloat()
-            for (col in 0..noLongitude) {
-                val phi = col * 2 * Math.PI / noLongitude
-                val sinPhi = sin(phi)
-                val cosPhi = cos(phi)
-                val x = cosPhi * sinTheta
-                val z = sinPhi * sinTheta
-                vertices[vertexIndex++] = (radius * x).toFloat()
-                vertices[vertexIndex++] = (radius * cosTheta).toFloat() + dist
-                vertices[vertexIndex++] = (radius * z).toFloat()
-                pColor[colorIndex++] = 1f
-                pColor[colorIndex++] = abs(tColor)
-                pColor[colorIndex++] = 0f
-                pColor[colorIndex++] = 1f
-                tColor += tColorInc
-
-                normals[normalIndx++] = (radius * x).toFloat()
-                normals[normalIndx++] = (radius * cosTheta).toFloat() + dist
-                normals[normalIndx++] = (radius * z).toFloat()
-
-                textureCoordinateData[textureIndex++] = col.toFloat() / noLongitude
-                textureCoordinateData[textureIndex++] = row.toFloat() / noLatitude
-            }
-        }
-        for (row in 0 until noLatitude) {
-            for (col in 0 until noLongitude) {
-                val first = row * (noLongitude + 1) + col
-                val second = first + noLongitude + 1
-                pIndex[indx++] = first
-                pIndex[indx++] = second
-                pIndex[indx++] = first + 1
-                pIndex[indx++] = second
-                pIndex[indx++] = second + 1
-                pIndex[indx++] = first + 1
-            }
-        }
-        sphereVertex = vertices.copyOf(vertexIndex)
-        sphereIndex = pIndex.copyOf(indx)
-        sphereColor = pColor.copyOf(colorIndex)
-
-        sphereNormal = normals.copyOf(normalIndx)
-        this.textureCoordinateData = textureCoordinateData.copyOf(textureIndex)
-    }
 
     init {
         LightLocation[0] = 2F
@@ -296,7 +232,7 @@ class MySphere(private val context:Context?) {
             textureBuffer
         )
 
-        mTextureSamplerHandle= GLES32.glGetUniformLocation(mProgram, "uTextureSampler")
+        mTextureSamplerHandle = GLES32.glGetUniformLocation(mProgram, "uTextureSampler")
         useTextureHandle = GLES32.glGetUniformLocation(mProgram, "uUseTexture")
         //---------
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
@@ -333,6 +269,20 @@ class MySphere(private val context:Context?) {
             mColorHandle, COLOR_PER_VERTEX,
             GLES32.GL_FLOAT, false, colorStride, colorBuffer
         )
+        //---------
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mTextureImageHandle)
+        GLES32.glUniform1i(mTextureSamplerHandle, 0)
+        GLES32.glVertexAttribPointer(
+            mTextureCoordHandle,
+            TEXTURE_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            TextureStride,
+            textureBuffer
+        )
+        GLES32.glUniform1i(useTextureHandle, 1)
+        //---------
         // Draw the sphere
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
@@ -340,14 +290,69 @@ class MySphere(private val context:Context?) {
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
+    }
 
-        //---------
-        GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
-        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mTextureImageHandle)
-        GLES32.glUniform1i(mTextureSamplerHandle, 0)
-        GLES32.glVertexAttribPointer(mTextureCoordHandle, TEXTURE_PER_VERTEX, GLES32.GL_FLOAT, false, TextureStride, textureBuffer)
-        GLES32.glUniform1i(useTextureHandle, 1)
-        //---------
+    private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
+        val normals = FloatArray(65535)
+        var normalIndx = 0
+
+        val textureCoordinateData = FloatArray(65535)
+        var textureIndex = 0
+
+        val vertices = FloatArray(65535)
+        val pIndex = IntArray(65535)
+        val pColor = FloatArray(65535)
+        var vertexIndex = 0
+        var colorIndex = 0
+        var indx = 0
+        val dist = 0f
+        for (row in 0..noLatitude) {
+            val theta = row * Math.PI / noLatitude
+            val sinTheta = sin(theta)
+            val cosTheta = cos(theta)
+            var tColor = -0.5f
+            val tColorInc = 1f / (noLongitude + 1).toFloat()
+            for (col in 0..noLongitude) {
+                val phi = col * 2 * Math.PI / noLongitude
+                val sinPhi = sin(phi)
+                val cosPhi = cos(phi)
+                val x = cosPhi * sinTheta
+                val z = sinPhi * sinTheta
+                vertices[vertexIndex++] = (radius * x).toFloat()
+                vertices[vertexIndex++] = (radius * cosTheta).toFloat() + dist
+                vertices[vertexIndex++] = (radius * z).toFloat()
+                pColor[colorIndex++] = 1f
+                pColor[colorIndex++] = abs(tColor)
+                pColor[colorIndex++] = 0f
+                pColor[colorIndex++] = 1f
+                tColor += tColorInc
+
+                normals[normalIndx++] = (radius * x).toFloat()
+                normals[normalIndx++] = (radius * cosTheta).toFloat() + dist
+                normals[normalIndx++] = (radius * z).toFloat()
+
+                textureCoordinateData[textureIndex++] = col.toFloat() / noLongitude
+                textureCoordinateData[textureIndex++] = row.toFloat() / noLatitude
+            }
+        }
+        for (row in 0 until noLatitude) {
+            for (col in 0 until noLongitude) {
+                val first = row * (noLongitude + 1) + col
+                val second = first + noLongitude + 1
+                pIndex[indx++] = first
+                pIndex[indx++] = second
+                pIndex[indx++] = first + 1
+                pIndex[indx++] = second
+                pIndex[indx++] = second + 1
+                pIndex[indx++] = first + 1
+            }
+        }
+        sphereVertex = vertices.copyOf(vertexIndex)
+        sphereIndex = pIndex.copyOf(indx)
+        sphereColor = pColor.copyOf(colorIndex)
+
+        sphereNormal = normals.copyOf(normalIndx)
+        this.textureCoordinateData = textureCoordinateData.copyOf(textureIndex)
     }
 
     private fun loadTextureFromResource(resourceId: Int, context: Context?): Int {
@@ -397,4 +402,5 @@ class MySphere(private val context:Context?) {
         private val SpecularColor = FloatArray(4)
         private const val MaterialShininess = 5F
     }
+
 }

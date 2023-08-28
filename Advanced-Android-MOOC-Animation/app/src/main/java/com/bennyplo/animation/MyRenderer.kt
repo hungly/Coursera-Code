@@ -19,6 +19,7 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
     private var mSphere: Sphere? = null
     private var mArbitrary: ArbitraryShape? = null
     private var mMySphere: MySphere? = null
+    private var mMyArbitrary: MyArbitraryShape? = null
 
     private var mAngleX: Float = 0F
     private var mAngleY: Float = 0F
@@ -31,6 +32,7 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         mSphere = Sphere()
         mArbitrary = ArbitraryShape()
         mMySphere = MySphere(context)
+        mMyArbitrary = MyArbitraryShape(context)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -58,7 +60,7 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
         Matrix.setRotateM(mRotationMatrixX, 0, mAngleX, 1f, 0f, 0f) //rotate around the x-axis
         Matrix.setRotateM(mRotationMatrixY, 0, mAngleY, 0f, 1f, 0f) //rotate around the y-axis
-        Matrix.setRotateM(mRotationMatrixZ, 0, 30f, 0f, 0f, 1f) //rotate around the Z-axis
+        Matrix.setRotateM(mRotationMatrixZ, 0, 0f, 0f, 0f, 1f) //rotate around the Z-axis
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
             mViewMatrix, 0,
@@ -78,7 +80,8 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
 //        mCharS?.draw(mMVPMatrix)
 //        mSphere?.draw(mMVPMatrix)
 //        mArbitrary?.draw(mMVPMatrix)
-        mMySphere?.draw(mMVPMatrix)
+//        mMySphere?.draw(mMVPMatrix)
+        mMyArbitrary?.draw(mMVPMatrix)
     }
 
     fun setAngleX(angle: Float) {

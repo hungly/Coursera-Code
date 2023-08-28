@@ -1,6 +1,10 @@
 package com.bennyplo.animation
 
+import android.content.Context
+import android.graphics.BitmapFactory
 import android.opengl.GLES32
+import android.opengl.GLUtils
+import com.bennyplo.designgraphicswithopengl.R
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -9,15 +13,94 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-class MyArbitraryShape {
+class MyArbitraryShape(context: Context?) {
+
+//    private val pointLightingLocationHandle: Int
+
+    private lateinit var ringColor: FloatArray
+    private lateinit var ringIndex: IntArray
+    private lateinit var ringNormal: FloatArray
+
+    // ring
+    private lateinit var ringVertex: FloatArray
+
+    private lateinit var sphere1Color: FloatArray
+    private lateinit var sphere1Index: IntArray
+    private lateinit var sphere1Normal: FloatArray
+
+    // 1st sphere
+    private lateinit var sphere1Vertex: FloatArray
+
+    private lateinit var sphere2Color: FloatArray
+    private lateinit var sphere2Index: IntArray
+    private lateinit var sphere2Normal: FloatArray
+
+    // 2nd sphere
+    private lateinit var sphere2Vertex: FloatArray
+
+    private lateinit var textureCoordinateData: FloatArray
+    private val attenuateHandle: Int
+    private val color2Buffer: FloatBuffer
+    private val colorBuffer: FloatBuffer
+    private val colorStride = COLOR_PER_VERTEX * 4 //4 bytes per vertex
+    private val diffuseColorHandle: Int
+
+    private val fragmentShaderCode =
+        "precision mediump float;" +  //define the precision of float
+                "varying vec4 vColor;" +
+                "varying vec4 vAmbientColor;" +
+                "varying vec4 vDiffuseColor;" +
+                "varying float vDiffuseLightWeighting;" +
+                "varying vec4 vSpecularColor;" +
+                "varying float vSpecularLightWeighting; " +
+                "varying vec2 vTextureCoordinate;" +
+                "uniform bool uUseTexture;" +
+                "uniform sampler2D uTextureSampler;" +
+                "void main() {" +
+                "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
+                "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
+//                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
+                "   if(uUseTexture) {" +
+                "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
+                "       gl_FragColor = fragmentColor + vAmbientColor + specularColor + diffuseColor;" +
+                "   } else {" +
+                "       gl_FragColor = vColor + vAmbientColor + specularColor + diffuseColor;" +
+                "   };" +
+                "}" //change the colour based on the variable from the vertex shader
+
+    private val index2Buffer: IntBuffer
+    private val indexBuffer: IntBuffer
+    private val lightLocationHandle: Int
+    private val mColorHandle: Int
+    private val mMVPMatrixHandle: Int
+    private val mNormalHandle: Int
+    private val mPositionHandle: Int
+    private val mProgram: Int
+    private val mTextureCoordHandle: Int
+    private val mTextureImageHandle: Int
+    private val mTextureSamplerHandle: Int
+    private val materialShininessHandle: Int
+    private val normal1Buffer: FloatBuffer
+    private val normal2Buffer: FloatBuffer
+    private val ringColorBuffer: FloatBuffer
+    private val ringIndexBuffer: IntBuffer
+    private val ringNormalBuffer: FloatBuffer
+    private val ringVertexBuffer: FloatBuffer
+    private val specularColorHandle: Int
+    private val textureBuffer: FloatBuffer
+    private val uAmbientColorHandle: Int
+    private val useTextureHandle: Int
+    private val vertex2Buffer: FloatBuffer
+    private val vertexBuffer: FloatBuffer
+
     private val vertexShaderCode =
         "attribute vec3 aVertexPosition;" +
                 "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
                 "attribute vec3 aVertexNormal;" +//attribute variable for normal vectors
                 "attribute vec4 aVertexColor;" +//attribute variable for vertex colors
                 "uniform vec3 uLightSourceLocation;" +//location of the light source (for diffuse and specular light)
-                "uniform vec3 uAmbientColor;" +//uniform variable for Ambient color
-                "varying vec3 vAmbientColor;" +
+                "uniform vec4 uAmbientColor;" +//uniform variable for Ambient color
+                "varying vec4 vAmbientColor;" +
                 "uniform vec4 uDiffuseColor;" +//color of the diffuse light
                 "varying vec4 vDiffuseColor;" +
                 "varying float vDiffuseLightWeighting;" +//diffuse light intensity
@@ -26,6 +109,8 @@ class MyArbitraryShape {
                 "varying vec4 vSpecularColor;" +
                 "varying float vSpecularLightWeighting; " +
                 "uniform float uMaterialShininess;" +
+                "attribute vec2 aTextureCoordinate;" +
+                "varying vec2 vTextureCoordinate;" +
                 //----------
                 "void main() {" +
                 "   gl_Position = uMVPMatrix *vec4(aVertexPosition, 1.0);" +
@@ -45,248 +130,10 @@ class MyArbitraryShape {
                 "   vDiffuseLightWeighting = attenuation*max(dot(transformedNormal,lightDirection),0.0);" +
                 "   vSpecularLightWeighting = attenuation*pow(max(dot(reflectionDirection, eyeDirection), 0.0), uMaterialShininess);" +
                 "   vColor = aVertexColor;" +
+                "   vTextureCoordinate = aTextureCoordinate;" +
                 "}" //get the colour from the application program
-    private val fragmentShaderCode =
-        "precision mediump float;" +  //define the precision of float
-                "varying vec4 vColor;" +
-                "varying vec3 vAmbientColor;" +
-                "varying vec4 vDiffuseColor;" +
-                "varying float vDiffuseLightWeighting;" +
-                "varying vec4 vSpecularColor;" +
-                "varying float vSpecularLightWeighting; " +
-                "void main() {" +
-                "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
-                "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
-                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
-                "}" //change the colour based on the variable from the vertex shader
-    private val vertexBuffer: FloatBuffer
-    private val colorBuffer: FloatBuffer
-    private val indexBuffer: IntBuffer
-    private val vertex2Buffer: FloatBuffer
-    private val color2Buffer: FloatBuffer
-    private val index2Buffer: IntBuffer
-    private val ringVertexBuffer: FloatBuffer
-    private val ringColorBuffer: FloatBuffer
-    private val ringIndexBuffer: IntBuffer
-    private val mProgram: Int
-    private val mPositionHandle: Int
-    private val mColorHandle: Int
-    private val mMVPMatrixHandle: Int
+
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
-    private val colorStride = COLOR_PER_VERTEX * 4 //4 bytes per vertex
-
-//    private val pointLightingLocationHandle: Int
-
-    // 1st sphere
-    private lateinit var sphere1Vertex: FloatArray
-    private lateinit var sphere1Index: IntArray
-    private lateinit var sphere1Color: FloatArray
-
-    // 2nd sphere
-    private lateinit var sphere2Vertex: FloatArray
-    private lateinit var sphere2Index: IntArray
-    private lateinit var sphere2Color: FloatArray
-
-    // ring
-    private lateinit var ringVertex: FloatArray
-    private lateinit var ringIndex: IntArray
-    private lateinit var ringColor: FloatArray
-
-    private lateinit var sphere1Normal: FloatArray
-    private lateinit var sphere2Normal: FloatArray
-    private lateinit var ringNormal: FloatArray
-
-    private val normal1Buffer: FloatBuffer
-    private val normal2Buffer: FloatBuffer
-    private val ringNormalBuffer: FloatBuffer
-
-    private val mNormalHandle: Int
-    private val diffuseColorHandle: Int
-    private val lightLocationHandle: Int
-    private val uAmbientColorHandle: Int
-    private val specularColorHandle: Int
-    private val materialShininessHandle: Int
-    private val attenuateHandle: Int
-
-    private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
-        val normals1 = FloatArray(65535)
-        val normals2 = FloatArray(65535)
-        val ringNormals = FloatArray(65535)
-        var normal1Indx = 0
-        var normal2Indx = 0
-        var ringNormIndx = 0
-
-        val vertices = FloatArray(65535)
-        val index = IntArray(65535)
-        val color = FloatArray(65535)
-        var pNormLen = (noLongitude + 1) * 3 * 3
-        var vertexIndex = 0
-        var colorIndex = 0
-        var indx = 0
-        val vertices2 = FloatArray(65535)
-        val index2 = IntArray(65535)
-        val color2 = FloatArray(65525)
-        var vertex2index = 0
-        var color2index = 0
-        var indx2 = 0
-        val ringVertices = FloatArray(65535)
-        val ringIndex = IntArray(65535)
-        val ringColor = FloatArray(65525)
-        var rVIndx = 0
-        var rCIndex = 0
-        var rIndx = 0
-        val dist = 3f
-        var pLen = (noLongitude + 1) * 3 * 3
-        var pColorLen = (noLongitude + 1) * 4 * 3
-        for (row in 0 until noLatitude + 1) {
-            val theta = row * Math.PI / noLatitude
-            val sinTheta = sin(theta)
-            val cosTheta = cos(theta)
-            var tColor = -0.5f
-            val tColorInc = 1 / (noLongitude + 1).toFloat()
-            for (col in 0 until noLongitude + 1) {
-                val phi = col * 2 * Math.PI / noLongitude
-                val sinPhi = sin(phi)
-                val cosPhi = cos(phi)
-                val x = cosPhi * sinTheta
-                val z = sinPhi * sinTheta
-                vertices[vertexIndex++] = (radius * x).toFloat()
-                vertices[vertexIndex++] = (radius * cosTheta).toFloat() + dist
-                vertices[vertexIndex++] = (radius * z).toFloat()
-                vertices2[vertex2index++] = (radius * x).toFloat()
-                vertices2[vertex2index++] = (radius * cosTheta).toFloat() - dist
-                vertices2[vertex2index++] = (radius * z).toFloat()
-                color[colorIndex++] = 1f
-                color[colorIndex++] = abs(tColor)
-                color[colorIndex++] = 0f
-                color[colorIndex++] = 1f
-                color2[color2index++] = 0f
-                color2[color2index++] = 1f
-                color2[color2index++] = abs(tColor)
-                color2[color2index++] = 1f
-                if (row == 20) {
-                    ringVertices[rVIndx++] = (radius * x).toFloat()
-                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() + dist
-                    ringVertices[rVIndx++] = (radius * z).toFloat()
-                    ringColor[rCIndex++] = 1f
-                    ringColor[rCIndex++] = abs(tColor)
-                    ringColor[rCIndex++] = 0f
-                    ringColor[rCIndex++] = 1f
-
-                    ringNormals[ringNormIndx++] = (radius * x).toFloat()
-                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() + dist
-                    ringNormals[ringNormIndx++] = (radius * z).toFloat()
-                }
-                if (row == 15) {
-                    ringVertices[rVIndx++] = (radius * x).toFloat() / 2
-                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
-                    ringVertices[rVIndx++] = (radius * z).toFloat() / 2
-                    ringColor[rCIndex++] = 1f
-                    ringColor[rCIndex++] = abs(tColor)
-                    ringColor[rCIndex++] = 0f
-                    ringColor[rCIndex++] = 1f
-
-                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
-                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
-                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
-                }
-                if (row == 10) {
-                    ringVertices[rVIndx++] = (radius * x).toFloat() / 2
-                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
-                    ringVertices[rVIndx++] = (radius * z).toFloat() / 2
-                    ringColor[rCIndex++] = 0f
-                    ringColor[rCIndex++] = 1f
-                    ringColor[rCIndex++] = abs(tColor)
-                    ringColor[rCIndex++] = 1f
-
-                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
-                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
-                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
-                }
-                if (row == 20) {
-                    ringVertices[pLen++] = (radius * x).toFloat()
-                    ringVertices[pLen++] = (-radius * cosTheta).toFloat() - dist
-                    ringVertices[pLen++] = (radius * z).toFloat()
-                    ringColor[pColorLen++] = 0f
-                    ringColor[pColorLen++] = 1f
-                    ringColor[pColorLen++] = abs(tColor)
-                    ringColor[pColorLen++] = 1f
-
-                    ringNormals[pNormLen++] = (radius * x).toFloat()
-                    ringNormals[pNormLen++] = (-radius * cosTheta).toFloat() - dist
-                    ringNormals[pNormLen++] = (radius * z).toFloat()
-                    //-------
-                }
-                tColor += tColorInc
-
-                normals1[normal1Indx++] = (radius * x).toFloat()
-                normals1[normal1Indx++] = (radius * cosTheta).toFloat() + dist
-                normals1[normal1Indx++] = (radius * z).toFloat()
-                normals2[normal2Indx++] = (radius * x).toFloat()
-                normals2[normal2Indx++] = (radius * cosTheta).toFloat() - dist
-                normals2[normal2Indx++] = (radius * z).toFloat()
-            }
-        }
-        //index buffer
-        for (row in 0 until noLatitude) {
-            for (col in 0 until noLongitude) {
-                val p0 = row * (noLongitude + 1) + col
-                val p1 = p0 + noLongitude + 1
-                index[indx++] = p1
-                index[indx++] = p0
-                index[indx++] = p0 + 1
-                index[indx++] = p1 + 1
-                index[indx++] = p1
-                index[indx++] = p0 + 1
-                index2[indx2++] = p1
-                index2[indx2++] = p0
-                index2[indx2++] = p0 + 1
-                index2[indx2++] = p1 + 1
-                index2[indx2++] = p1
-                index2[indx2++] = p0 + 1
-            }
-        }
-        rVIndx = (noLongitude + 1) * 3 * 4
-        rCIndex = (noLongitude + 1) * 4 * 4
-        pLen = noLongitude + 1
-        for (j in 0 until pLen - 1) {
-            ringIndex[rIndx++] = j
-            ringIndex[rIndx++] = j + pLen
-            ringIndex[rIndx++] = j + 1
-            ringIndex[rIndx++] = j + pLen + 1
-            ringIndex[rIndx++] = j + 1
-            ringIndex[rIndx++] = j + pLen
-            ringIndex[rIndx++] = j + pLen
-            ringIndex[rIndx++] = j + pLen * 2
-            ringIndex[rIndx++] = j + pLen + 1
-            ringIndex[rIndx++] = j + pLen * 2 + 1
-            ringIndex[rIndx++] = j + pLen + 1
-            ringIndex[rIndx++] = j + pLen * 2
-            ringIndex[rIndx++] = j + pLen * 3
-            ringIndex[rIndx++] = j
-            ringIndex[rIndx++] = j + 1
-            ringIndex[rIndx++] = j + 1
-            ringIndex[rIndx++] = j + pLen * 3 + 1
-            ringIndex[rIndx++] = j + pLen * 3
-        }
-
-        ringNormIndx = (noLongitude + 1) * 3 * 4
-
-        //set the buffers
-        sphere1Vertex = vertices.copyOf(vertexIndex)
-        sphere1Index = index.copyOf(indx)
-        sphere1Color = color.copyOf(colorIndex)
-        sphere2Vertex = vertices2.copyOf(vertex2index)
-        sphere2Index = index2.copyOf(indx2)
-        sphere2Color = color2.copyOf(color2index)
-        ringVertex = ringVertices.copyOf(rVIndx)
-        this.ringColor = ringColor.copyOf(rCIndex)
-        this.ringIndex = ringIndex.copyOf(rIndx)
-
-        sphere1Normal = normals1.copyOf(normal1Indx)
-        sphere2Normal = normals2.copyOf(normal2Indx)
-        ringNormal = ringNormals.copyOf(ringNormIndx)
-    }
 
     init {
         LightLocation[0] = 2F
@@ -418,6 +265,41 @@ class MyArbitraryShape {
         materialShininessHandle = GLES32.glGetUniformLocation(mProgram, "uMaterialShininess")
         // MyRenderer.checkGlError("glGetUniformLocation-mMVPMatrixHandle")
         //---------
+        mTextureImageHandle = loadTextureFromResource(R.drawable.world, context)
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MIN_FILTER,
+            GLES32.GL_LINEAR
+        )
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MAG_FILTER,
+            GLES32.GL_NEAREST
+        )
+
+        val tb = ByteBuffer.allocateDirect(textureCoordinateData.size * 4)
+        tb.order(ByteOrder.nativeOrder())
+        textureBuffer = tb.asFloatBuffer()
+        textureBuffer.put(textureCoordinateData)
+        textureBuffer.position(0)
+
+        mTextureCoordHandle = GLES32.glGetAttribLocation(mProgram, "aTextureCoordinate")
+
+        GLES32.glEnableVertexAttribArray(mTextureCoordHandle)
+        GLES32.glVertexAttribPointer(
+            mTextureCoordHandle,
+            MySphere.TEXTURE_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            MySphere.TextureStride,
+            textureBuffer
+        )
+
+        mTextureSamplerHandle = GLES32.glGetUniformLocation(mProgram, "uTextureSampler")
+        useTextureHandle = GLES32.glGetUniformLocation(mProgram, "uUseTexture")
+        //---------
         // get handle to shape's transformation matrix
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
     }
@@ -451,6 +333,20 @@ class MyArbitraryShape {
             mColorHandle, COORDS_PER_VERTEX,
             GLES32.GL_FLOAT, false, colorStride, colorBuffer
         )
+        //---------
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mTextureImageHandle)
+        GLES32.glUniform1i(mTextureSamplerHandle, 0)
+        GLES32.glVertexAttribPointer(
+            mTextureCoordHandle,
+            MySphere.TEXTURE_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            MySphere.TextureStride,
+            textureBuffer
+        )
+        GLES32.glUniform1i(useTextureHandle, 1)
+        //---------
         // Draw the Sphere
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
@@ -458,6 +354,8 @@ class MyArbitraryShape {
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
+        //---------
+        GLES32.glUniform1i(useTextureHandle, 0)
         //---------
         //2nd sphere
         GLES32.glVertexAttribPointer(
@@ -469,7 +367,14 @@ class MyArbitraryShape {
             GLES32.GL_FLOAT, false, colorStride, color2Buffer
         )
 
-        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, normal2Buffer)
+        GLES32.glVertexAttribPointer(
+            mNormalHandle,
+            COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            vertexStride,
+            normal2Buffer
+        )
 
         // Draw the Sphere
         GLES32.glDrawElements(
@@ -489,7 +394,14 @@ class MyArbitraryShape {
             GLES32.GL_FLOAT, false, colorStride, ringColorBuffer
         )
 
-        GLES32.glVertexAttribPointer(mNormalHandle, COORDS_PER_VERTEX, GLES32.GL_FLOAT, false, vertexStride, ringNormalBuffer)
+        GLES32.glVertexAttribPointer(
+            mNormalHandle,
+            COORDS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            vertexStride,
+            ringNormalBuffer
+        )
 
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
@@ -499,10 +411,232 @@ class MyArbitraryShape {
         )
     }
 
-    fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
+    fun setLightLocation(pX: Float, pY: Float, pZ: Float) {
         LightLocation[0] = pX
         LightLocation[1] = pY
         LightLocation[2] = pZ
+    }
+
+    private fun createSphere(radius: Float, noLatitude: Int, noLongitude: Int) {
+        val normals1 = FloatArray(65535)
+        val normals2 = FloatArray(65535)
+        val ringNormals = FloatArray(65535)
+        var normal1Indx = 0
+        var normal2Indx = 0
+        var ringNormIndx = 0
+
+        val textureCoordinateData = FloatArray(65535)
+        var textureIndex = 0
+
+        val vertices = FloatArray(65535)
+        val index = IntArray(65535)
+        val color = FloatArray(65535)
+        var pNormLen = (noLongitude + 1) * 3 * 3
+        var vertexIndex = 0
+        var colorIndex = 0
+        var indx = 0
+        val vertices2 = FloatArray(65535)
+        val index2 = IntArray(65535)
+        val color2 = FloatArray(65525)
+        var vertex2index = 0
+        var color2index = 0
+        var indx2 = 0
+        val ringVertices = FloatArray(65535)
+        val ringIndex = IntArray(65535)
+        val ringColor = FloatArray(65525)
+        var rVIndx = 0
+        var rCIndex = 0
+        var rIndx = 0
+        val dist = 3f
+        var pLen = (noLongitude + 1) * 3 * 3
+        var pColorLen = (noLongitude + 1) * 4 * 3
+        for (row in 0 until noLatitude + 1) {
+            val theta = row * Math.PI / noLatitude
+            val sinTheta = sin(theta)
+            val cosTheta = cos(theta)
+            var tColor = -0.5f
+            val tColorInc = 1 / (noLongitude + 1).toFloat()
+            for (col in 0 until noLongitude + 1) {
+                val phi = col * 2 * Math.PI / noLongitude
+                val sinPhi = sin(phi)
+                val cosPhi = cos(phi)
+                val x = cosPhi * sinTheta
+                val z = sinPhi * sinTheta
+                vertices[vertexIndex++] = (radius * x).toFloat()
+                vertices[vertexIndex++] = (radius * cosTheta).toFloat() + dist
+                vertices[vertexIndex++] = (radius * z).toFloat()
+                vertices2[vertex2index++] = (radius * x).toFloat()
+                vertices2[vertex2index++] = (radius * cosTheta).toFloat() - dist
+                vertices2[vertex2index++] = (radius * z).toFloat()
+                color[colorIndex++] = 1f
+                color[colorIndex++] = abs(tColor)
+                color[colorIndex++] = 0f
+                color[colorIndex++] = 1f
+                color2[color2index++] = 0f
+                color2[color2index++] = 1f
+                color2[color2index++] = abs(tColor)
+                color2[color2index++] = 1f
+
+                textureCoordinateData[textureIndex++] = col.toFloat() / noLongitude
+                textureCoordinateData[textureIndex++] = row.toFloat() / noLatitude
+
+                if (row == 20) {
+                    ringVertices[rVIndx++] = (radius * x).toFloat()
+                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() + dist
+                    ringVertices[rVIndx++] = (radius * z).toFloat()
+                    ringColor[rCIndex++] = 1f
+                    ringColor[rCIndex++] = abs(tColor)
+                    ringColor[rCIndex++] = 0f
+                    ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat()
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() + dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat()
+                }
+                if (row == 15) {
+                    ringVertices[rVIndx++] = (radius * x).toFloat() / 2
+                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
+                    ringVertices[rVIndx++] = (radius * z).toFloat() / 2
+                    ringColor[rCIndex++] = 1f
+                    ringColor[rCIndex++] = abs(tColor)
+                    ringColor[rCIndex++] = 0f
+                    ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 + 0.2f * dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
+                }
+                if (row == 10) {
+                    ringVertices[rVIndx++] = (radius * x).toFloat() / 2
+                    ringVertices[rVIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
+                    ringVertices[rVIndx++] = (radius * z).toFloat() / 2
+                    ringColor[rCIndex++] = 0f
+                    ringColor[rCIndex++] = 1f
+                    ringColor[rCIndex++] = abs(tColor)
+                    ringColor[rCIndex++] = 1f
+
+                    ringNormals[ringNormIndx++] = (radius * x).toFloat() / 2
+                    ringNormals[ringNormIndx++] = (radius * cosTheta).toFloat() / 2 - 0.1f * dist
+                    ringNormals[ringNormIndx++] = (radius * z).toFloat() / 2
+                }
+                if (row == 20) {
+                    ringVertices[pLen++] = (radius * x).toFloat()
+                    ringVertices[pLen++] = (-radius * cosTheta).toFloat() - dist
+                    ringVertices[pLen++] = (radius * z).toFloat()
+                    ringColor[pColorLen++] = 0f
+                    ringColor[pColorLen++] = 1f
+                    ringColor[pColorLen++] = abs(tColor)
+                    ringColor[pColorLen++] = 1f
+
+                    ringNormals[pNormLen++] = (radius * x).toFloat()
+                    ringNormals[pNormLen++] = (-radius * cosTheta).toFloat() - dist
+                    ringNormals[pNormLen++] = (radius * z).toFloat()
+                    //-------
+                }
+                tColor += tColorInc
+
+                normals1[normal1Indx++] = (radius * x).toFloat()
+                normals1[normal1Indx++] = (radius * cosTheta).toFloat() + dist
+                normals1[normal1Indx++] = (radius * z).toFloat()
+                normals2[normal2Indx++] = (radius * x).toFloat()
+                normals2[normal2Indx++] = (radius * cosTheta).toFloat() - dist
+                normals2[normal2Indx++] = (radius * z).toFloat()
+            }
+        }
+        //index buffer
+        for (row in 0 until noLatitude) {
+            for (col in 0 until noLongitude) {
+                val p0 = row * (noLongitude + 1) + col
+                val p1 = p0 + noLongitude + 1
+                index[indx++] = p1
+                index[indx++] = p0
+                index[indx++] = p0 + 1
+                index[indx++] = p1 + 1
+                index[indx++] = p1
+                index[indx++] = p0 + 1
+                index2[indx2++] = p1
+                index2[indx2++] = p0
+                index2[indx2++] = p0 + 1
+                index2[indx2++] = p1 + 1
+                index2[indx2++] = p1
+                index2[indx2++] = p0 + 1
+            }
+        }
+        rVIndx = (noLongitude + 1) * 3 * 4
+        rCIndex = (noLongitude + 1) * 4 * 4
+        pLen = noLongitude + 1
+        for (j in 0 until pLen - 1) {
+            ringIndex[rIndx++] = j
+            ringIndex[rIndx++] = j + pLen
+            ringIndex[rIndx++] = j + 1
+            ringIndex[rIndx++] = j + pLen + 1
+            ringIndex[rIndx++] = j + 1
+            ringIndex[rIndx++] = j + pLen
+            ringIndex[rIndx++] = j + pLen
+            ringIndex[rIndx++] = j + pLen * 2
+            ringIndex[rIndx++] = j + pLen + 1
+            ringIndex[rIndx++] = j + pLen * 2 + 1
+            ringIndex[rIndx++] = j + pLen + 1
+            ringIndex[rIndx++] = j + pLen * 2
+            ringIndex[rIndx++] = j + pLen * 3
+            ringIndex[rIndx++] = j
+            ringIndex[rIndx++] = j + 1
+            ringIndex[rIndx++] = j + 1
+            ringIndex[rIndx++] = j + pLen * 3 + 1
+            ringIndex[rIndx++] = j + pLen * 3
+        }
+
+        ringNormIndx = (noLongitude + 1) * 3 * 4
+
+        //set the buffers
+        sphere1Vertex = vertices.copyOf(vertexIndex)
+        sphere1Index = index.copyOf(indx)
+        sphere1Color = color.copyOf(colorIndex)
+        sphere2Vertex = vertices2.copyOf(vertex2index)
+        sphere2Index = index2.copyOf(indx2)
+        sphere2Color = color2.copyOf(color2index)
+        ringVertex = ringVertices.copyOf(rVIndx)
+        this.ringColor = ringColor.copyOf(rCIndex)
+        this.ringIndex = ringIndex.copyOf(rIndx)
+
+        sphere1Normal = normals1.copyOf(normal1Indx)
+        sphere2Normal = normals2.copyOf(normal2Indx)
+        ringNormal = ringNormals.copyOf(ringNormIndx)
+
+        this.textureCoordinateData = textureCoordinateData.copyOf(textureIndex)
+    }
+
+    private fun loadTextureFromResource(resourceId: Int, context: Context?): Int {
+        val textureHandle = IntArray(1)
+        GLES32.glGenTextures(1, textureHandle, 0)
+
+        if (textureHandle[0] != 0) {
+            val options = BitmapFactory.Options()
+            options.inScaled = false // No pre-scaling
+            // Read in the resource
+            val bitmap = BitmapFactory.decodeResource(context?.resources, resourceId, options)
+            // Bind to the texture in OpenGL
+            GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureHandle[0])
+            // Set filtering
+//            GLES32.glTexParameteri(
+//                GLES32.GL_TEXTURE_2D,
+//                GLES32.GL_TEXTURE_MIN_FILTER,
+//                GLES32.GL_NEAREST
+//            )
+//            GLES32.glTexParameteri(
+//                GLES32.GL_TEXTURE_2D,
+//                GLES32.GL_TEXTURE_MAG_FILTER,
+//                GLES32.GL_NEAREST
+//            )
+            // Load the bitmap into the bound texture.
+            GLUtils.texImage2D(GLES32.GL_TEXTURE_2D, 0, bitmap, 0)
+            // Recycle the bitmap, since its data has been loaded into OpenGL.
+            bitmap.recycle()
+        }
+        if (textureHandle[0] == 0) {
+            throw RuntimeException("Error loading texture.")
+        }
+        return textureHandle[0]
     }
 
     companion object {
@@ -517,4 +651,5 @@ class MyArbitraryShape {
         private val SpecularColor = FloatArray(4)
         private const val MaterialShininess = 5F
     }
+
 }
