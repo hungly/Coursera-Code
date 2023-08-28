@@ -77,7 +77,8 @@ class MyArbitraryShape(context: Context?) {
     private val mPositionHandle: Int
     private val mProgram: Int
     private val mTextureCoordHandle: Int
-    private val mTextureImageHandle: Int
+    private val mEarthTextureImageHandle: Int
+    private val mSunTextureImageHandle: Int
     private val mTextureSamplerHandle: Int
     private val materialShininessHandle: Int
     private val normal1Buffer: FloatBuffer
@@ -149,8 +150,8 @@ class MyArbitraryShape(context: Context?) {
         Attenuation[1] = 0.14F
         Attenuation[2] = 0.07F
 
-        SpecularColor[0] = 0F
-        SpecularColor[1] = 0F
+        SpecularColor[0] = 1F
+        SpecularColor[1] = 1F
         SpecularColor[2] = 1F
         SpecularColor[3] = 1F
 
@@ -265,7 +266,7 @@ class MyArbitraryShape(context: Context?) {
         materialShininessHandle = GLES32.glGetUniformLocation(mProgram, "uMaterialShininess")
         // MyRenderer.checkGlError("glGetUniformLocation-mMVPMatrixHandle")
         //---------
-        mTextureImageHandle = loadTextureFromResource(R.drawable.world, context)
+        mEarthTextureImageHandle = loadTextureFromResource(R.drawable.world, context)
 
         GLES32.glTexParameteri(
             GLES32.GL_TEXTURE_2D,
@@ -278,6 +279,21 @@ class MyArbitraryShape(context: Context?) {
             GLES32.GL_TEXTURE_MAG_FILTER,
             GLES32.GL_NEAREST
         )
+
+        mSunTextureImageHandle = loadTextureFromResource(R.drawable.sun, context)
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MIN_FILTER,
+            GLES32.GL_NEAREST
+        )
+
+        GLES32.glTexParameteri(
+            GLES32.GL_TEXTURE_2D,
+            GLES32.GL_TEXTURE_MAG_FILTER,
+            GLES32.GL_NEAREST
+        )
+
 
         val tb = ByteBuffer.allocateDirect(textureCoordinateData.size * 4)
         tb.order(ByteOrder.nativeOrder())
@@ -335,7 +351,7 @@ class MyArbitraryShape(context: Context?) {
         )
         //---------
         GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
-        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mTextureImageHandle)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mEarthTextureImageHandle)
         GLES32.glUniform1i(mTextureSamplerHandle, 0)
         GLES32.glVertexAttribPointer(
             mTextureCoordHandle,
@@ -355,7 +371,19 @@ class MyArbitraryShape(context: Context?) {
             indexBuffer
         )
         //---------
-        GLES32.glUniform1i(useTextureHandle, 0)
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE1)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, mSunTextureImageHandle)
+        GLES32.glUniform1i(mTextureSamplerHandle, 1)
+        GLES32.glVertexAttribPointer(
+            mTextureCoordHandle,
+            MySphere.TEXTURE_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            MySphere.TextureStride,
+            textureBuffer
+        )
+        GLES32.glUniform1i(useTextureHandle, 1)
+//        GLES32.glUniform1i(useTextureHandle, 0)
         //---------
         //2nd sphere
         GLES32.glVertexAttribPointer(
@@ -385,6 +413,7 @@ class MyArbitraryShape(context: Context?) {
         )
         ///////////////////
         //Rings
+        GLES32.glUniform1i(useTextureHandle, 0)
         GLES32.glVertexAttribPointer(
             mPositionHandle, COORDS_PER_VERTEX,
             GLES32.GL_FLOAT, false, vertexStride, ringVertexBuffer
