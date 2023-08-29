@@ -20,6 +20,7 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
     private var mArbitrary: ArbitraryShape? = null
     private var mMySphere: MySphere? = null
     private var mMyArbitrary: MyArbitraryShape? = null
+    private var mMyPyramid: MyPyramid? = null
 
     private var mAngleX: Float = 0F
     private var mAngleY: Float = 0F
@@ -31,8 +32,9 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         mCharS = CharacterS()
         mSphere = Sphere()
         mArbitrary = ArbitraryShape()
-        mMySphere = MySphere(context)
-        mMyArbitrary = MyArbitraryShape(context)
+//        mMySphere = MySphere(context)
+//        mMyArbitrary = MyArbitraryShape(context)
+        mMyPyramid = MyPyramid(context)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -80,8 +82,9 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
 //        mCharS?.draw(mMVPMatrix)
 //        mSphere?.draw(mMVPMatrix)
 //        mArbitrary?.draw(mMVPMatrix)
-        mMySphere?.draw(mMVPMatrix)
+//        mMySphere?.draw(mMVPMatrix)
 //        mMyArbitrary?.draw(mMVPMatrix)
+        mMyPyramid?.draw(mMVPMatrix)
     }
 
     fun setAngleX(angle: Float) {

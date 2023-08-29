@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     private var glView: MyView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        imageFileSearch()
+//        imageFileSearch()
         super.onCreate(savedInstanceState)
         //setContentView(R.layout.activity_main);
         glView = MyView(this)
