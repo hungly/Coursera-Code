@@ -80,8 +80,8 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
 //        mCharS?.draw(mMVPMatrix)
 //        mSphere?.draw(mMVPMatrix)
 //        mArbitrary?.draw(mMVPMatrix)
-//        mMySphere?.draw(mMVPMatrix)
-        mMyArbitrary?.draw(mMVPMatrix)
+        mMySphere?.draw(mMVPMatrix)
+//        mMyArbitrary?.draw(mMVPMatrix)
     }
 
     fun setAngleX(angle: Float) {

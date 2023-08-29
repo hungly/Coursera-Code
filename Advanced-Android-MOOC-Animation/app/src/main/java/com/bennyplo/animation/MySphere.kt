@@ -13,7 +13,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-class MySphere(context: Context?) {
+class MySphere(private val context: Context?) {
 
     private lateinit var sphereColor: FloatArray
     private lateinit var sphereIndex: IntArray
@@ -200,7 +200,8 @@ class MySphere(context: Context?) {
         materialShininessHandle = GLES32.glGetUniformLocation(mProgram, "uMaterialShininess")
         // MyRenderer.checkGlError("glGetUniformLocation-mMVPMatrixHandle")
         //---------
-        mTextureImageHandle = loadTextureFromResource(R.drawable.world, context)
+//        mTextureImageHandle = loadTextureFromResource(R.drawable.world, context)
+        mTextureImageHandle = loadTextureFromFile()
 
         GLES32.glTexParameteri(
             GLES32.GL_TEXTURE_2D,
@@ -355,6 +356,35 @@ class MySphere(context: Context?) {
         this.textureCoordinateData = textureCoordinateData.copyOf(textureIndex)
     }
 
+    private fun loadTextureFromFile(): Int {
+        val textureHandle = IntArray(1)
+
+        GLES32.glGenTextures(1, textureHandle, 0)
+
+        if (context is MainActivity && textureHandle[0] != 0) {
+            val bitmap = context.getTextureBitmap()
+
+            GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureHandle[0])
+            GLES32.glTexParameteri(
+                GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MIN_FILTER,
+                GLES32.GL_NEAREST
+            )
+            GLES32.glTexParameteri(
+                GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MAG_FILTER,
+                GLES32.GL_NEAREST
+            )
+
+            GLUtils.texImage2D(GLES32.GL_TEXTURE_2D, 0, bitmap, 0)
+            bitmap?.recycle()
+        } else {
+            throw RuntimeException("Error loading texture.")
+        }
+
+        return textureHandle[0]
+    }
+
     private fun loadTextureFromResource(resourceId: Int, context: Context?): Int {
         val textureHandle = IntArray(1)
         GLES32.glGenTextures(1, textureHandle, 0)
@@ -366,17 +396,6 @@ class MySphere(context: Context?) {
             val bitmap = BitmapFactory.decodeResource(context?.resources, resourceId, options)
             // Bind to the texture in OpenGL
             GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureHandle[0])
-            // Set filtering
-//            GLES32.glTexParameteri(
-//                GLES32.GL_TEXTURE_2D,
-//                GLES32.GL_TEXTURE_MIN_FILTER,
-//                GLES32.GL_NEAREST
-//            )
-//            GLES32.glTexParameteri(
-//                GLES32.GL_TEXTURE_2D,
-//                GLES32.GL_TEXTURE_MAG_FILTER,
-//                GLES32.GL_NEAREST
-//            )
             // Load the bitmap into the bound texture.
             GLUtils.texImage2D(GLES32.GL_TEXTURE_2D, 0, bitmap, 0)
             // Recycle the bitmap, since its data has been loaded into OpenGL.

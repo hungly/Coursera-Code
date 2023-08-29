@@ -3,6 +3,7 @@ package com.bennyplo.animation
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.opengl.GLES32
+import android.opengl.GLU
 import android.opengl.GLUtils
 import com.bennyplo.designgraphicswithopengl.R
 import java.nio.ByteBuffer
@@ -13,7 +14,9 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-class MyArbitraryShape(context: Context?) {
+class MyArbitraryShape(
+
+    private val context: Context?) {
 
 //    private val pointLightingLocationHandle: Int
 
@@ -698,17 +701,6 @@ class MyArbitraryShape(context: Context?) {
             val bitmap = BitmapFactory.decodeResource(context?.resources, resourceId, options)
             // Bind to the texture in OpenGL
             GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureHandle[0])
-            // Set filtering
-//            GLES32.glTexParameteri(
-//                GLES32.GL_TEXTURE_2D,
-//                GLES32.GL_TEXTURE_MIN_FILTER,
-//                GLES32.GL_NEAREST
-//            )
-//            GLES32.glTexParameteri(
-//                GLES32.GL_TEXTURE_2D,
-//                GLES32.GL_TEXTURE_MAG_FILTER,
-//                GLES32.GL_NEAREST
-//            )
             // Load the bitmap into the bound texture.
             GLUtils.texImage2D(GLES32.GL_TEXTURE_2D, 0, bitmap, 0)
             // Recycle the bitmap, since its data has been loaded into OpenGL.
@@ -717,6 +709,35 @@ class MyArbitraryShape(context: Context?) {
         if (textureHandle[0] == 0) {
             throw RuntimeException("Error loading texture.")
         }
+        return textureHandle[0]
+    }
+
+    private fun loadTextureFromFile() : Int{
+        val textureHandle = IntArray(1)
+
+        GLES32.glGenTextures(1, textureHandle, 0)
+
+        if (context is MainActivity && textureHandle[0] !=0) {
+            val bitmap = context.getTextureBitmap()
+
+            GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureHandle[0])
+            GLES32.glTexParameteri(
+                GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MIN_FILTER,
+                GLES32.GL_NEAREST
+            )
+            GLES32.glTexParameteri(
+                GLES32.GL_TEXTURE_2D,
+                GLES32.GL_TEXTURE_MAG_FILTER,
+                GLES32.GL_NEAREST
+            )
+
+            GLUtils.texImage2D(GLES32.GL_TEXTURE_2D, 0, bitmap, 0)
+            bitmap?.recycle()
+        } else {
+            throw RuntimeException("Error loading texture.")
+        }
+
         return textureHandle[0]
     }
 
