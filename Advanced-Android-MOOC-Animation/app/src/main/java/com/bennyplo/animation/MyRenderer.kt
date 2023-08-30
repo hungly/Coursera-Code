@@ -21,6 +21,7 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
     private var mMySphere: MySphere? = null
     private var mMyArbitrary: MyArbitraryShape? = null
     private var mMyPyramid: MyPyramid? = null
+    private var mFlatSurface: FlatSurface? = null
 
     private var mAngleX: Float = 0F
     private var mAngleY: Float = 0F
@@ -34,7 +35,8 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         mArbitrary = ArbitraryShape()
 //        mMySphere = MySphere(context)
         mMyArbitrary = MyArbitraryShape(context)
-//        mMyPyramid = MyPyramid(context)
+        mMyPyramid = MyPyramid(context)
+        mFlatSurface = FlatSurface(context)
 
         //-------
         GLES32.glCullFace(GLES32.GL_BACK) //don't draw back faces
@@ -83,17 +85,28 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         // Calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-//        mCharA?.draw(mMVPMatrix)
 
-//        Matrix.translateM(mModelMatrix, 0, 2.0f, 0.0f, 0f) //move backward for 5 units
-//        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-//        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+        GLES32.glDisable(GLES32.GL_BLEND)
+        mCharA?.draw(mMVPMatrix)
 //        mCharS?.draw(mMVPMatrix)
 //        mSphere?.draw(mMVPMatrix)
 //        mArbitrary?.draw(mMVPMatrix)
 //        mMySphere?.draw(mMVPMatrix)
-        mMyArbitrary?.draw(mMVPMatrix)
+//        mMyArbitrary?.draw(mMVPMatrix)
 //        mMyPyramid?.draw(mMVPMatrix)
+
+//        Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -0.6f) //move backward for 5 units
+//        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
+//        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+        GLES32.glBlendFunc(GLES32.GL_ONE, GLES32.GL_ONE_MINUS_CONSTANT_ALPHA)
+//        GLES32.glBlendColor(1f, 0f, 0f, 1f)
+        GLES32.glDisable(GLES32.GL_CULL_FACE)
+        GLES32.glDisable(GLES32.GL_DEPTH_TEST)
+        GLES32.glBlendEquation(GLES32.GL_FUNC_ADD)
+        GLES32.glEnable(GLES32.GL_BLEND)
+
+//        mFlatSurface?.draw(mMVPMatrix)
+        mMyArbitrary?.draw(mMVPMatrix)
     }
 
     fun setAngleX(angle: Float) {
