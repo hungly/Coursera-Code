@@ -33,8 +33,13 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         mSphere = Sphere()
         mArbitrary = ArbitraryShape()
 //        mMySphere = MySphere(context)
-//        mMyArbitrary = MyArbitraryShape(context)
+        mMyArbitrary = MyArbitraryShape(context)
 //        mMyPyramid = MyPyramid(context)
+
+        //-------
+        GLES32.glCullFace(GLES32.GL_BACK) //don't draw back faces
+        GLES32.glEnable(GLES32.GL_CULL_FACE) //enable culling
+        //-------
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -78,16 +83,16 @@ class MyRenderer(private val context:Context?) : GLSurfaceView.Renderer {
         // Calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-        mCharA?.draw(mMVPMatrix)
+//        mCharA?.draw(mMVPMatrix)
 
-        Matrix.translateM(mModelMatrix, 0, 2.0f, 0.0f, 0f) //move backward for 5 units
-        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-        mCharS?.draw(mMVPMatrix)
+//        Matrix.translateM(mModelMatrix, 0, 2.0f, 0.0f, 0f) //move backward for 5 units
+//        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
+//        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+//        mCharS?.draw(mMVPMatrix)
 //        mSphere?.draw(mMVPMatrix)
 //        mArbitrary?.draw(mMVPMatrix)
 //        mMySphere?.draw(mMVPMatrix)
-//        mMyArbitrary?.draw(mMVPMatrix)
+        mMyArbitrary?.draw(mMVPMatrix)
 //        mMyPyramid?.draw(mMVPMatrix)
     }
 

@@ -654,12 +654,14 @@ class MyArbitraryShape(
             ringIndex[rIndx++] = j + pLen + 1
             ringIndex[rIndx++] = j + 1
             ringIndex[rIndx++] = j + pLen
+
             ringIndex[rIndx++] = j + pLen
             ringIndex[rIndx++] = j + pLen * 2
             ringIndex[rIndx++] = j + pLen + 1
             ringIndex[rIndx++] = j + pLen * 2 + 1
             ringIndex[rIndx++] = j + pLen + 1
             ringIndex[rIndx++] = j + pLen * 2
+
             ringIndex[rIndx++] = j + pLen * 3
             ringIndex[rIndx++] = j
             ringIndex[rIndx++] = j + 1
