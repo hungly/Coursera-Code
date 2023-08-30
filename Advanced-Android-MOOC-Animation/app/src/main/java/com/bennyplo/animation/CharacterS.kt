@@ -281,6 +281,9 @@ class CharacterS {
     }
 
     fun draw(mvpMatrix: FloatArray?) {
+        //------------------------
+        GLES32.glUseProgram(mProgram) // Add program to OpenGL environment
+        //------------------------
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0)
         //set the attribute of the vertex to point to the vertex buffer
