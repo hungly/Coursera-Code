@@ -9,11 +9,8 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
 
-class MyPyramid(private val context: Context?) {
+class MyCube(private val context: Context?) {
 
     private val attenuateHandle: Int
     private val colorBuffer: FloatBuffer
@@ -122,27 +119,27 @@ class MyPyramid(private val context: Context?) {
         SpecularColor[2] = 1F
         SpecularColor[3] = 1F
 
-        val nb1 = ByteBuffer.allocateDirect(PyramidNormals.size * 4)
+        val nb1 = ByteBuffer.allocateDirect(CubeNormals.size * 4)
         nb1.order(ByteOrder.nativeOrder())
         normalBuffer = nb1.asFloatBuffer()
-        normalBuffer.put(PyramidNormals)
+        normalBuffer.put(CubeNormals)
         normalBuffer.position(0)
 
         // initialize vertex byte buffer for shape coordinates
         val bb =
-            ByteBuffer.allocateDirect(PyramidVertexes.size * 4) // (# of coordinate values * 4 bytes per float)
+            ByteBuffer.allocateDirect(CubeVertexes.size * 4) // (# of coordinate values * 4 bytes per float)
         bb.order(ByteOrder.nativeOrder())
         vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(PyramidVertexes)
+        vertexBuffer.put(CubeVertexes)
         vertexBuffer.position(0)
-        val ib = IntBuffer.allocate(PyramidIndexes.size)
+        val ib = IntBuffer.allocate(CubeIndexes.size)
         indexBuffer = ib
-        indexBuffer.put(PyramidIndexes)
+        indexBuffer.put(CubeIndexes)
         indexBuffer.position(0)
-        val cb = ByteBuffer.allocateDirect(PyramidColors.size * 4)
+        val cb = ByteBuffer.allocateDirect(CubeColors.size * 4)
         cb.order(ByteOrder.nativeOrder())
         colorBuffer = cb.asFloatBuffer()
-        colorBuffer.put(PyramidColors)
+        colorBuffer.put(CubeColors)
         colorBuffer.position(0)
         //////////////////////
         // prepare shaders and OpenGL program
@@ -283,7 +280,7 @@ class MyPyramid(private val context: Context?) {
         // Draw the sphere
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
-            PyramidIndexes.size,
+            CubeIndexes.size,
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
@@ -354,42 +351,54 @@ class MyPyramid(private val context: Context?) {
         private val SpecularColor = FloatArray(4)
         private const val MaterialShininess = 5F
 
-        private val PyramidVertexes = floatArrayOf(
+        private val CubeVertexes = floatArrayOf(
             -1f, -1f, 1f,
             1f, -1f, 1f,
+            1f, 1f, 1f,
+            -1f, 1f, 1f,
+            -1f, 1f, -1f,
+            1f, 1f, -1f,
             1f, -1f, -1f,
             -1f, -1f, -1f,
-            0f, 2f, 0f
         )
-        private val PyramidColors = floatArrayOf(
-            1f,0f,0f,1f,
-            1f,0f,0f,1f,
-            1f,0f,0f,1f,
-            1f,0f,0f,1f,
-            1f,0f,0f,1f,
+        private val CubeColors = floatArrayOf(
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
+            0f, 0f, 1f, 1f,
         )
-        private val PyramidIndexes = intArrayOf(
-            0, 1, 4,
-            1, 2, 4,
-            2, 3, 4,
-            3, 0, 4,
-//            0, 2, 1,
-//            0, 3, 2
+        private val CubeIndexes = intArrayOf(
+            0, 1, 2, 0, 2, 3, //front face
+            4, 5, 6, 4, 6, 7, //back face
+            2, 5, 4, 2, 4, 3, //top face
+            0, 7, 1, 1, 7, 6, //bottom face
+            0, 3, 4, 0, 4, 7, //left face
+            1, 6, 5, 1, 5, 2, //right face
         )
 
-        private val PyramidNormals = floatArrayOf(
+        private val CubeNormals = floatArrayOf(
             -1f, -1f, 1f,
             1f, -1f, 1f,
+            1f, 1f, 1f,
+            -1f, 1f, 1f,
+            -1f, 1f, -1f,
+            1f, 1f, -1f,
             1f, -1f, -1f,
             -1f, -1f, -1f,
-            0f, 1f, 0f
         )
         private val TextureCoordinateDate = floatArrayOf(
             0f, 1f,
             1f, 1f,
+            1f, 0f,
+            0f, 0f,
             0f, 1f,
             1f, 1f,
-            0.5f, 0f
+            1f, 0f,
+            0f, 0f,
         )
     }
 
