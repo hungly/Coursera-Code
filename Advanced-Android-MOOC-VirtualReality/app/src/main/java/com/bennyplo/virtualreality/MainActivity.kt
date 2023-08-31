@@ -36,10 +36,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     }
 
-    override fun onPause() {
-        super.onPause()
-        sensorManager?.unregisterListener(this)
-    }
+//    override fun onPause() {
+//        super.onPause()
+//        sensorManager?.unregisterListener(this)
+//    }
 
     override fun onResume() {
         super.onResume()

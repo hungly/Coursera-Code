@@ -344,7 +344,7 @@ class Sphere(private val context: Context) {
                 pColor[colorIndex++] = 0f
                 pColor[colorIndex++] = 0f
                 pColor[colorIndex++] = 1f
-                val u = col / noLongitude.toFloat()
+                val u = ((col / noLongitude.toFloat() - 0.5f) * -1) + 0.5f
                 val v = row / noLatitude.toFloat()
                 textureCoordData[textureIndex++] = u
                 textureCoordData[textureIndex++] = v

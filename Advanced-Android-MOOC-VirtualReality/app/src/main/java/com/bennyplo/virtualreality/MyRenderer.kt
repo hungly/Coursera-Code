@@ -35,10 +35,17 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
     var yAngle = 0f //y-rotation angle
     var zAngle = 0f //y-rotation angle
 
+    private var viewPortWidth: Int = 0
+    private var viewPortHeight: Int = 0
+    private var mSphericalMirror: FrameBufferDisplay? = null
+
     override fun onDrawFrame(unused: GL10) {
         val mRotationMatrixX = FloatArray(16)
         val mRotationMatrixY = FloatArray(16)
         val mRotationMatrixZ = FloatArray(16)
+
+        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
+
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
         GLES32.glClearDepthf(1.0f) //set up the depth buffer
@@ -69,17 +76,86 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         //calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+
+        mSphere.setLightLocation(-10f, -10f, -10f)
+
 //        mCharA.draw(mMVPMatrix)
 //        mCharS.draw(mMVPMatrix)
         mSphere.draw(mMVPMatrix)
+
+        mSphericalMirror?.let {
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
+            GLES32.glViewport(0, 0, it.width, it.height)
+            GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+            val pViewMatrix = FloatArray(16)
+            Matrix.setLookAtM(
+                pViewMatrix, 0,
+                0.0f, 0f, -9f,
+                0f, 0f, 0f,
+                0f, 1f, 0.0f
+            )
+            Matrix.scaleM(mModelMatrix, 0, 1f / SCALE_FACTOR, 1 / SCALE_FACTOR, 1 / SCALE_FACTOR)
+            Matrix.multiplyMM(mMVMatrix, 0, pViewMatrix, 0, mModelMatrix, 0)
+            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjMatrix, 0, mMVMatrix, 0)
+            mSphere.setLightLocation(2f, 2f, 0f)
+            mSphere.draw(mMVPMatrix)
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
+        }
+
+        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
+        Matrix.setIdentityM(mModelMatrix, 0)
+        Matrix.scaleM(
+            mModelMatrix,
+            0,
+            (mSphericalMirror?.width?.toFloat() ?: 1f) / (mSphericalMirror?.height?.toFloat()
+                ?: 1f),
+            1f,
+            1f
+        )
+        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+        mSphericalMirror?.draw(mMVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
         // Adjust the view based on view window changes, such as screen rotation
         GLES32.glViewport(0, 0, width, height)
-        val ratio = width.toFloat() / height
+        var ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
+
+        viewPortWidth = width
+        viewPortHeight = height
+
+//        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
+        if (width > height) {
+            ratio = (width.toFloat() / height) / SCALE_FACTOR
+            Matrix.orthoM(
+                mProjectionMatrix,
+                0,
+                -ratio,
+                ratio,
+                -1f / SCALE_FACTOR,
+                1f / SCALE_FACTOR,
+                -10f,
+                200f
+            )
+
+            mSphericalMirror = FrameBufferDisplay(height, width)
+        } else {
+            ratio = (height.toFloat() / width) / SCALE_FACTOR
+            Matrix.orthoM(
+                mProjectionMatrix,
+                0,
+                -1f / SCALE_FACTOR,
+                1f / SCALE_FACTOR,
+                -ratio,
+                ratio,
+                -10f,
+                200f
+            )
+
+            mSphericalMirror = FrameBufferDisplay(width, height)
+        }
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
@@ -93,6 +169,8 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     companion object {
+        private const val SCALE_FACTOR = 1.2f
+
         fun checkGlError(glOperation: String) {
             var error: Int
             if (GLES32.glGetError().also { error = it } != GLES32.GL_NO_ERROR) {
