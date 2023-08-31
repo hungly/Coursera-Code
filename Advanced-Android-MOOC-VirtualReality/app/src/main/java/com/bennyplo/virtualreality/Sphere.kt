@@ -257,7 +257,7 @@ class Sphere(private val context: Context) {
         GLES32.glUseProgram(mProgram) // Add program to OpenGL environment
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0)
-        MyRenderer.Companion.checkGlError("glUniformMatrix4fv")
+        MyRenderer.checkGlError("glUniformMatrix4fv")
         GLES32.glUniform3fv(pointLightingLocationHandle, 1, LightLocation, 0)
         GLES32.glUniform3fv(diffuseLightLocationHandle, 1, DiffuseLightLocation, 0)
         GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)

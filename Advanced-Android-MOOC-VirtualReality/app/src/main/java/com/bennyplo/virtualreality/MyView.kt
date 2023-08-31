@@ -2,6 +2,7 @@ package com.bennyplo.virtualreality
 
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import kotlin.math.abs
@@ -94,6 +95,13 @@ class MyView(context: Context) : GLSurfaceView(context) {
         mPreviousX = x
         mPreviousY = y
         return true
+    }
+
+    fun sensorRotates(pitch: Double, yaw: Double, roll: Double) {
+        mRenderer.xAngle = pitch.toFloat()
+        mRenderer.yAngle = yaw.toFloat()
+        mRenderer.zAngle = roll.toFloat()
+        requestRender()
     }
 
     private fun distance(

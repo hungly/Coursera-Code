@@ -33,10 +33,12 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     //set the rotational angles and zoom factors
     var yAngle = 0f //y-rotation angle
+    var zAngle = 0f //y-rotation angle
 
     override fun onDrawFrame(unused: GL10) {
-        val mRotationMatrix = FloatArray(16)
-        val mRotationMatrix2 = FloatArray(16)
+        val mRotationMatrixX = FloatArray(16)
+        val mRotationMatrixY = FloatArray(16)
+        val mRotationMatrixZ = FloatArray(16)
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
         GLES32.glClearDepthf(1.0f) //set up the depth buffer
@@ -48,8 +50,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         ) //set the model view projection matrix to an identity matrix
         Matrix.setIdentityM(mMVMatrix, 0) //set the model view  matrix to an identity matrix
         Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
-        Matrix.setRotateM(mRotationMatrix, 0, yAngle, 0f, 1.0f, 0f) //rotate around the y-axis
-        Matrix.setRotateM(mRotationMatrix2, 0, xAngle, 1.0f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrixZ, 0, zAngle, 0f, 0f, 1f) //rotate around the y-axis
 
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
@@ -59,8 +62,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             0f, 1f, 0.0f
         ) //head is down (set to (0,1,0) to look from the top)
         Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) //move backward for 5 units
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix, 0)
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrix2, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
+        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixZ, 0)
         // Calculate the projection and view transformation
         //calculate the model view matrix
         Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
