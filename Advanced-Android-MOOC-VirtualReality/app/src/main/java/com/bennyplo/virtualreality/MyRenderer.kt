@@ -68,6 +68,7 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             0f, 0f, 0f,  //looks at the origin
             0f, 1f, 0.0f
         ) //head is down (set to (0,1,0) to look from the top)
+        Matrix.scaleM(mModelMatrix, 0, 1f * SCALE_FACTOR, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR)
         Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) //move backward for 5 units
         Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
         Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
@@ -94,7 +95,13 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 0f, 0f, 0f,
                 0f, 1f, 0.0f
             )
-            Matrix.scaleM(mModelMatrix, 0, 1f / SCALE_FACTOR, 1 / SCALE_FACTOR, 1 / SCALE_FACTOR)
+            Matrix.scaleM(
+                mModelMatrix,
+                0,
+                1f / SCALE_FACTOR / SCALE_FACTOR,
+                1 / SCALE_FACTOR / SCALE_FACTOR,
+                1 / SCALE_FACTOR / SCALE_FACTOR
+            )
             Matrix.multiplyMM(mMVMatrix, 0, pViewMatrix, 0, mModelMatrix, 0)
             Matrix.multiplyMM(mMVPMatrix, 0, it.mProjMatrix, 0, mMVMatrix, 0)
             mSphere.setLightLocation(2f, 2f, 0f)
@@ -128,31 +135,13 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
 //        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
         if (width > height) {
-            ratio = (width.toFloat() / height) / SCALE_FACTOR
-            Matrix.orthoM(
-                mProjectionMatrix,
-                0,
-                -ratio,
-                ratio,
-                -1f / SCALE_FACTOR,
-                1f / SCALE_FACTOR,
-                -10f,
-                200f
-            )
+            ratio = (width.toFloat() / height)
+            Matrix.orthoM(mProjectionMatrix, 0, -ratio, ratio, -1f, 1f, -10f, 200f)
 
             mSphericalMirror = FrameBufferDisplay(height, width)
         } else {
-            ratio = (height.toFloat() / width) / SCALE_FACTOR
-            Matrix.orthoM(
-                mProjectionMatrix,
-                0,
-                -1f / SCALE_FACTOR,
-                1f / SCALE_FACTOR,
-                -ratio,
-                ratio,
-                -10f,
-                200f
-            )
+            ratio = (height.toFloat() / width)
+            Matrix.orthoM(mProjectionMatrix, 0, -1f, 1f, -ratio, ratio, -10f, 200f)
 
             mSphericalMirror = FrameBufferDisplay(width, height)
         }
