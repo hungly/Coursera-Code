@@ -14,6 +14,7 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
     private var mPositionHandle = 0
     private var mTextureCoordHandle = 0
     private var mTextureHandle = 0
+    private var mLightHandle = 0
 
     private val frameBufferTextureId by lazy {
         IntArray(1)
@@ -69,7 +70,11 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
         mTextureHandle = GLES32.glGetUniformLocation(program, "uSampler")
         mMVPMatrixHandle = GLES32.glGetUniformLocation(program, "uMVPMatrix")
 
-        width = pWidth / 2
+        // mirror effect
+        mLightHandle = GLES32.glGetUniformLocation(program, "uLighting")
+        width = pWidth
+
+//        width = pWidth / 2
         height = pHeight
         val ratio = width.toFloat() / height
         val left = -ratio
@@ -87,6 +92,10 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
         GLES32.glActiveTexture(GLES32.GL_TEXTURE1)
         GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, frameBufferTextureId[0])
         GLES32.glUniform1i(mTextureHandle, 1)
+
+        // mirror effect
+        GLES32.glUniform3f(mLightHandle, 0.8f, 0.8f, 0.8f)
+
         GLES32.glVertexAttribPointer(
             mTextureCoordHandle,
             TEXTTURE_PER_VERTEX,
@@ -208,7 +217,14 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
                     "uniform mat4 uMVPMatrix;" +
                     "attribute vec2 aTextureCoord;" +
                     "varying vec2 vTextureCoord;" +
+                    // mirror effect
+                    "uniform vec3 uLighting;" +
+                    "varying vec3 vLighting;" +
+                    //
                     "void main() {" +
+                    // mirror effect
+                    "   vLighting = uLighting;" +
+                    //
                     "   gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);" +
                     "   vTextureCoord = aTextureCoord;" +
                     "}"
@@ -217,10 +233,15 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
             "precision lowp float;" +
                     "varying vec2 vTextureCoord;" +
                     "uniform sampler2D uSampler;" +
+                    // mirror effect
+                    "varying vec3 vLighting;" +
+                    //
                     "void main() {" +
                     "   vec4 fragmentColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));" +
                     "   if (fragmentColor.r < 0.01 && fragmentColor.g < 0.01 && fragmentColor.b < 0.01) discard;" +
-                    "    gl_FragColor = vec4(fragmentColor.rgb, fragmentColor.a);" +
+//                    "   else gl_FragColor = vec4(fragmentColor.rgb, fragmentColor.a);" +
+                    // mirror effect
+                    "   else gl_FragColor = vec4(fragmentColor.rgb * vLighting, fragmentColor.a);" +
                     "}"
 
         private val DISPLAY_VERTEX = floatArrayOf(
@@ -235,11 +256,18 @@ class FrameBufferDisplay(pHeight: Int, pWidth: Int) {
             0, 2, 3
         )
 
+        //        private val DISPLAY_TEXTURE_COORDS = floatArrayOf(
+//            0f, 0f,
+//            1f, 0f,
+//            1f, 1f,
+//            0f, 1f
+//        )
+        // mirror effect
         private val DISPLAY_TEXTURE_COORDS = floatArrayOf(
-            0f, 0f,
-            1f, 0f,
+            0f, 1f,
             1f, 1f,
-            0f, 1f
+            1f, 0f,
+            0f, 0f
         )
     }
 
