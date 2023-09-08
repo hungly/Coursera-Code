@@ -24,6 +24,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         Sphere(context)
     }
 
+    private var mLeftView: StereoView? = null
+    private var mRightView: StereoView? = null
+
     private val mMVMatrix = FloatArray(16) //model view matrix
     private val mMVPMatrix = FloatArray(16) //model view projection matrix
     private val mModelMatrix = FloatArray(16) //model  matrix
@@ -192,6 +195,31 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 //        mSphericalMirror?.draw(mMVPMatrix)
         // reflection effect
         mReflectionEffect?.draw(mMVPMatrix)
+
+        mLeftView?.let {
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
+            GLES32.glViewport(0, 0, it.width, it.height)
+            GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+            val pMatrix = it.getModelMatrix(xAngle,yAngle,zAngle)
+            Matrix.multiplyMM(mMVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
+            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjectionMatrix, 0, mMVMatrix, 0)
+            mSphere.draw(mMVPMatrix)
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
+        }
+        mRightView?.let {
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
+            GLES32.glViewport(0, 0, it.width, it.height)
+            GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+            val pMatrix = it.getModelMatrix(xAngle,yAngle,zAngle)
+            Matrix.multiplyMM(mMVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
+            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjectionMatrix, 0, mMVMatrix, 0)
+            mSphere.draw(mMVPMatrix)
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
+        }
+        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
+        GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+        mLeftView?.draw()
+        mRightView?.draw()
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {
@@ -222,6 +250,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             // mirror effect
             mSphericalMirror = FrameBufferDisplay(width * 2, height)
             mReflectionEffect = ReflectionEffect((height * SCALE_FACTOR_FOR_PORTRAIT).toInt(), width)
+
+            mLeftView = StereoView(width, height, true)
+            mLeftView = StereoView(width, height, false)
         }
     }
 
