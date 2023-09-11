@@ -13,10 +13,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.bennyplo.virtualreality.ref.MyView
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    private var glView: MyView? = null
+    private var glView: com.bennyplo.virtualreality.ref.MyView? = null
     private var rotationSensor: Sensor? = null
     private var sensorManager: SensorManager? = null
 
@@ -36,18 +37,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     }
 
-    override fun onPause() {
-        super.onPause()
-        sensorManager?.unregisterListener(this)
-    }
+//    override fun onPause() {
+//        super.onPause()
+//        sensorManager?.unregisterListener(this)
+//    }
 
-    override fun onResume() {
-        super.onResume()
-
-        rotationSensor?.let {
-            sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
-        }
-    }
+//    override fun onResume() {
+//        super.onResume()
+//
+//        rotationSensor?.let {
+//            sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
+//        }
+//    }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
@@ -124,7 +125,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val pitch = Math.toDegrees(orientation[1].toDouble())
         val roll = Math.toDegrees(orientation[2].toDouble())
 
-        glView?.sensorRotates(pitch, yaw, roll)
+//        glView?.sensorRotates(pitch, yaw, roll)
     }
 
 }
