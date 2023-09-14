@@ -9,14 +9,13 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
+class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
 
     private var mMVPMatrixHandle = 0
     private var mPositionHandle = 0
     private var mTextureCoordHandle = 0
     private var mTextureHandle = 0
-    private var mHeightHandle = 0
-    private var mFactorHandle = 0
+    private var modelTranslation: Float = 0f
 
     private val frameBufferTextureId by lazy {
         IntArray(1)
@@ -26,7 +25,15 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
         IntArray(1)
     }
 
+    private val aspect: Float
+        get() = width.toFloat() / height.toFloat()
+
     private val indexBuffer: IntBuffer
+    private val mFrameModelMatrix = FloatArray(16)
+    private val mMVMatrix = FloatArray(16)
+    private val mMVPMatrix = FloatArray(16)
+    private val mModelMatrix = FloatArray(16)
+    private val mViewMatrix = FloatArray(16)
     private val program: Int
     private val textureBuffer: FloatBuffer
     private val vertexBuffer: FloatBuffer
@@ -35,21 +42,10 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
         IntArray(1)
     }
 
-    val mMVMatrix = FloatArray(16)
-    private val mMVPMatrix = FloatArray(16)
-    private val mModelMatrix = FloatArray(16)
-    val mProjectionMatrix = FloatArray(16)
-    private val mViewMatrix = FloatArray(16)
-
-    private var modelTranslation: Float = 0f
-
-    val mFrameViewMatrix = FloatArray(16)
-    private val mFrameModelMatrix = FloatArray(16)
-
     val height: Int
+    val mFrameViewMatrix = FloatArray(16)
+    val mProjectionMatrix = FloatArray(16)
     val width: Int
-    private val aspect: Float
-        get() = width.toFloat() / height.toFloat()
 
     init {
         val bb = ByteBuffer.allocateDirect(DISPLAY_VERTEX.size * Float.SIZE_BYTES)
@@ -122,7 +118,7 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
                 mProjectionMatrix,
                 0,
                 FRUSTUM_SHIFT - aspect,
-                FRUSTUM_SHIFT - aspect,
+                FRUSTUM_SHIFT + aspect,
                 -1f,
                 1f,
                 NEAR_Z,
@@ -147,7 +143,7 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
                 mProjectionMatrix,
                 0,
                 -aspect - FRUSTUM_SHIFT,
-                -aspect - FRUSTUM_SHIFT,
+                aspect - FRUSTUM_SHIFT,
                 -1f,
                 1f,
                 NEAR_Z,
@@ -172,22 +168,6 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
         Matrix.translateM(mFrameModelMatrix, 0, modelTranslation, 0f, DEPTH_Z)
 
         createFrameBuffer(width, height)
-    }
-
-    fun getModelMatrix(rotateX: Float, rotateY: Float, rotateZ: Float): FloatArray {
-        val pModelMatrix = FloatArray(16)
-        val mRotationMatrixX = FloatArray(16)
-        val mRotationMatrixY = FloatArray(16)
-        val mRotationMatrixZ = FloatArray(16)
-
-        Matrix.setIdentityM(pModelMatrix, 0)
-        Matrix.setRotateM(mRotationMatrixX, 0, rotateX, 1f, 0f, 0f)
-        Matrix.setRotateM(mRotationMatrixY, 0, rotateY, 0f, 1f, 0f)
-        Matrix.setRotateM(mRotationMatrixZ, 0, rotateZ, 0f, 0f, 1f)
-        Matrix.multiplyMM(pModelMatrix, 0, mFrameModelMatrix, 0, mRotationMatrixX, 0)
-        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixX, 0)
-        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixX, 0)
-        return pModelMatrix
     }
 
     fun draw() {
@@ -225,6 +205,22 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
+    }
+
+    fun getModelMatrix(rotateX: Float, rotateY: Float, rotateZ: Float): FloatArray {
+        val pModelMatrix = FloatArray(16) //model  matrix
+        val mRotationMatrixX = FloatArray(16) //rotation//  matrix
+        val mRotationMatrixY = FloatArray(16) //rotation//  matrix
+        val mRotationMatrixZ = FloatArray(16) //rotation//  matrix
+
+        Matrix.setIdentityM(pModelMatrix, 0) //set the model matrix to an identity matrix
+        Matrix.setRotateM(mRotationMatrixX, 0, rotateX, 1.0f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, rotateY, 0f, 1.0f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrixZ, 0, rotateZ, 0f, 0f, 1f) //rotate around the x-axis
+        Matrix.multiplyMM(pModelMatrix, 0, mFrameModelMatrix, 0, mRotationMatrixX, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixY, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixZ, 0)
+        return pModelMatrix
     }
 
     private fun createFrameBuffer(width: Int, height: Int) {
@@ -339,15 +335,14 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
                     "}"
 
         private val DISPLAY_VERTEX = floatArrayOf(
-            -1f, -1f, 1f,
-            1f, -1f, 1f,
-            1f, 1f, 1f,
-            -1f, 1f, 1f
+            -1.0f, -1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f
         )
 
         private val DISPLAY_INDEX = intArrayOf(
-            0, 1, 2,
-            0, 2, 3
+            0, 1, 2, 0, 2, 3
         )
 
         //        private val DISPLAY_TEXTURE_COORDS = floatArrayOf(
@@ -358,13 +353,13 @@ class StereoView(pHeight: Int, pWidth: Int, isLeft: Boolean) {
 //        )
         // mirror effect
         private val DISPLAY_TEXTURE_COORDS = floatArrayOf(
-            0f, 1f,
-            1f, 1f,
+            0f, 0f,
             1f, 0f,
-            0f, 0f
+            1f, 1f,
+            0f, 1f
         )
 
-        private const val DEPTH_Z = -1f
+        private const val DEPTH_Z = -5f
         private const val NEAR_Z = 1f
         private const val FAR_Z = 8f
         private const val SCREEN_Z = -10f

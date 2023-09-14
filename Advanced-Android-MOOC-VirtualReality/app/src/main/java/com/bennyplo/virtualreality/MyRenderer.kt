@@ -10,13 +10,17 @@ import javax.microedition.khronos.opengles.GL10
 
 class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
-    private var mZoom = 0f //zoom factor
+    private var mLeftView: StereoView? = null
+    private var mRightView: StereoView? = null
+    private var mViewportWidth = 0
+    private var mZoom = 0f // zoom factor
+    private var viewportheight = 0
 
-    private val mCharA by lazy {
+    private val mCharA: CharacterA by lazy {
         CharacterA()
     }
 
-    private val mCharS by lazy {
+    private val mCharS: CharacterS by lazy {
         CharacterS()
     }
 
@@ -24,199 +28,90 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         Sphere(context)
     }
 
-    private var mLeftView: StereoView? = null
-    private var mRightView: StereoView? = null
-
-    private val mMVMatrix = FloatArray(16) //model view matrix
-    private val mMVPMatrix = FloatArray(16) //model view projection matrix
-    private val mModelMatrix = FloatArray(16) //model  matrix
-    private val mProjectionMatrix = FloatArray(16) //projection mastrix
-    private val mViewMatrix = FloatArray(16) //view matrix
-    var xAngle = 0f //x-rotation angle
+    private val mVMatrix = FloatArray(16) // model view matrix
+    private val mVPMatrix = FloatArray(16) // model view projection matrix
+    private val modelMatrix = FloatArray(16) // model  matrix
+    private val projectionMatrix = FloatArray(16) // projection matrix
+    private val viewMatrix = FloatArray(16) // view matrix
+    var xAngle = 0f // x-rotation angle
 
     //set the rotational angles and zoom factors
-    var yAngle = 0f //y-rotation angle
-    var zAngle = 0f //y-rotation angle
+    var yAngle = 0f // y-rotation angle
 
-    private var viewPortWidth: Int = 0
-    private var viewPortHeight: Int = 0
-    private var mSphericalMirror: FrameBufferDisplay? = null
-    private var mReflectionEffect: ReflectionEffect? = null
+    var zAngle = 0f // z-rotation angle
 
     override fun onDrawFrame(unused: GL10) {
         val mRotationMatrixX = FloatArray(16)
         val mRotationMatrixY = FloatArray(16)
         val mRotationMatrixZ = FloatArray(16)
-
-        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
-
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-        GLES32.glClearDepthf(1.0f) //set up the depth buffer
-        GLES32.glEnable(GLES32.GL_DEPTH_TEST) //enable depth test (so, it will not look through the surfaces)
-        GLES32.glDepthFunc(GLES32.GL_LEQUAL) //indicate what type of depth test
+        GLES32.glClearDepthf(1.0f) // set up the depth buffer
+        GLES32.glEnable(GLES32.GL_DEPTH_TEST) // enable depth test (so, it will not look through the surfaces)
+        GLES32.glDepthFunc(GLES32.GL_LEQUAL) // indicate what type of depth test
         Matrix.setIdentityM(
-            mMVPMatrix,
+            mVPMatrix,
             0
-        ) //set the model view projection matrix to an identity matrix
-        Matrix.setIdentityM(mMVMatrix, 0) //set the model view  matrix to an identity matrix
-        Matrix.setIdentityM(mModelMatrix, 0) //set the model matrix to an identity matrix
-        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1f, 0f, 0f) //rotate around the x-axis
-        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1f, 0f) //rotate around the y-axis
-        Matrix.setRotateM(mRotationMatrixZ, 0, zAngle, 0f, 0f, 1f) //rotate around the y-axis
+        ) // set the model view projection matrix to an identity matrix
+        Matrix.setIdentityM(mVMatrix, 0) // set the model view  matrix to an identity matrix
+        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
+        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1.0f, 0f, 0f) // rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
+        Log.d("HUNGLY", "onDrawFrame: ${mRotationMatrixX.joinToString(",")}\n${mRotationMatrixY.joinToString(",")}")
 
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
-            mViewMatrix, 0,
-            0.0f, 0f, 1.0f,  //camera is at (0,0,1)
-            0f, 0f, 0f,  //looks at the origin
-            0f, 1f, 0.0f
-        ) //head is down (set to (0,1,0) to look from the top)
-//        Matrix.scaleM(mModelMatrix, 0, 1f * SCALE_FACTOR, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR)
-        // mirror effect
-        Matrix.scaleM(
-            mModelMatrix,
+            viewMatrix,
             0,
-            MIRROR_SCALE_FACTOR,
-            MIRROR_SCALE_FACTOR,
-            MIRROR_SCALE_FACTOR
-        )
-
-        Matrix.translateM(mModelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) //move backward for 5 units
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
-        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixZ, 0)
+            0.0f,
+            0f,
+            1.0f,  // camera is at (0,0,1)
+            0f,
+            0f,
+            0f,  // looks at the origin
+            0f,
+            1f,
+            0.0f
+        ) // head is down (set to (0,1,0) to look from the top)
+        Matrix.translateM(modelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) // move backward for 5 units
+        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixX, 0)
+        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixY, 0)
         // Calculate the projection and view transformation
-        //calculate the model view matrix
-        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
+        // Calculate the model view matrix
+        Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
 
-        // mirror effect
-//        mSphere.setLightLocation(-10f, -10f, -10f)
+        // mSphere.draw(mMVPMatrix);
 
-//        mCharA.draw(mMVPMatrix)
-//        mCharS.draw(mMVPMatrix)
-        mSphere.draw(mMVPMatrix)
-
-        // reflection effect
-//        mSphericalMirror?.let {
-//            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
-//            GLES32.glViewport(0, 0, it.width, it.height)
-//            GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-//
-//            // mirror effect
-////            val pViewMatrix = FloatArray(16)
-////            Matrix.setLookAtM(
-////                pViewMatrix, 0,
-////                0.0f, 0f, -9f,
-////                0f, 0f, 0f,
-////                0f, 1f, 0.0f
-////            )
-////            Matrix.scaleM(
-////                mModelMatrix,
-////                0,
-////                1f / SCALE_FACTOR / SCALE_FACTOR,
-////                1 / SCALE_FACTOR / SCALE_FACTOR,
-////                1 / SCALE_FACTOR / SCALE_FACTOR
-////            )
-//
-////            Matrix.multiplyMM(mMVMatrix, 0, pViewMatrix, 0, mModelMatrix, 0)
-//            Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-////            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjMatrix, 0, mMVMatrix, 0)
-//            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-//
-////            mSphere.setLightLocation(2f, 2f, 0f)
-//            mSphere.draw(mMVPMatrix)
-//            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
-//        }
-
-        mReflectionEffect?.let {
-            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
-            GLES32.glViewport(0, 0, it.width, it.height)
-            GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-
-            Matrix.setIdentityM(mModelMatrix, 0)
-            Matrix.scaleM(mModelMatrix, 0, MIRROR_SCALE_FACTOR, MIRROR_SCALE_FACTOR, MIRROR_SCALE_FACTOR)
-            Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
-            Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixY, 0)
-            Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixZ, 0)
-            Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-
-            mSphere.draw(mMVPMatrix)
-            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
-        }
-
-        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
-        Matrix.setIdentityM(mModelMatrix, 0)
-
-        // reflection effect
-//        Matrix.scaleM(
-//            mModelMatrix,
-//            0,
-//            (mSphericalMirror?.width?.toFloat() ?: 1f) / (mSphericalMirror?.height?.toFloat()
-//                ?: 1f),
-//            1f,
-//            1f
-//        )
-
-        // mirror effect
-//        Matrix.setRotateM(mRotationMatrixX, 0, 65f, 1f, 0f, 0f) //rotate around the x-axis
-//        Matrix.translateM(mModelMatrix, 0, 0.0f, 0.05f, 0f)
-//        Matrix.multiplyMM(mModelMatrix, 0, mModelMatrix, 0, mRotationMatrixX, 0)
-
-        // reflection effect
-        if ((mReflectionEffect?.width?.toFloat() ?: 1f) > (mReflectionEffect?.height?.toFloat()
-            ?: 1f)) {
-            Matrix.scaleM(
-                mModelMatrix,
-                0,
-                (mReflectionEffect?.width?.toFloat() ?: 1f) / (mReflectionEffect?.height?.toFloat()
-                    ?: 1f),
-                1f,
-                1f
-            )
-            Matrix.translateM(mModelMatrix, 0, 0.0f, -1f, 0f)
-        } else {
-            Matrix.scaleM(
-                mModelMatrix,
-                0,
-                1f,
-                (mReflectionEffect?.height?.toFloat() ?: 1f) / SCALE_FACTOR_FOR_PORTRAIT / (mReflectionEffect?.width?.toFloat()
-                    ?: 1f),
-                1f
-            )
-            Matrix.translateM(mModelMatrix, 0, 0.0f, -0.5f, 0f)
-        }
-
-        Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0)
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0)
-
-//        mSphericalMirror?.draw(mMVPMatrix)
-        // reflection effect
-        mReflectionEffect?.draw(mMVPMatrix)
-
+        // Draw the frame buffer
+        GLES32.glViewport(0, 0, mViewportWidth, viewportheight)
+        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
         mLeftView?.let {
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
             GLES32.glViewport(0, 0, it.width, it.height)
             GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-            val pMatrix = it.getModelMatrix(xAngle,yAngle,zAngle)
-            Matrix.multiplyMM(mMVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
-            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjectionMatrix, 0, mMVMatrix, 0)
-            mSphere.draw(mMVPMatrix)
-            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
+            val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
+            Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
+            Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
+            // mSphere.draw(mMVPMatrix);
+            mCharA.draw(mVPMatrix)
+            mCharS.draw(mVPMatrix)
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) //render onto the screen
         }
         mRightView?.let {
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
             GLES32.glViewport(0, 0, it.width, it.height)
             GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-            val pMatrix = it.getModelMatrix(xAngle,yAngle,zAngle)
-            Matrix.multiplyMM(mMVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
-            Matrix.multiplyMM(mMVPMatrix, 0, it.mProjectionMatrix, 0, mMVMatrix, 0)
-            mSphere.draw(mMVPMatrix)
-            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0)
+            val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
+            Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
+            Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
+            // mSphere.draw(mMVPMatrix);
+            mCharA.draw(mVPMatrix)
+            mCharS.draw(mVPMatrix)
+            GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) // render onto the screen
         }
-        GLES32.glViewport(0, 0, viewPortWidth, viewPortHeight)
+        // Draw the framebuffer
+        GLES32.glViewport(0, 0, mViewportWidth, viewportheight)
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
         mLeftView?.draw()
         mRightView?.draw()
@@ -227,38 +122,24 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         var ratio = width.toFloat() / height
         val left = -ratio
-
-        viewPortWidth = width
-        viewPortHeight = height
-
-//        Matrix.frustumM(mProjectionMatrix, 0, left, ratio, -1.0f, 1.0f, 1.0f, 8.0f)
+        val right = ratio
+        // Matrix.frustumM(mProjectionMatrix, 0, left, right, -1.0f, 1.0f, 1.0f, 8.0f);
         if (width > height) {
-            ratio = (width.toFloat() / height)
-            Matrix.orthoM(mProjectionMatrix, 0, -ratio, ratio, -1f, 1f, -10f, 200f)
-
-//            mSphericalMirror = FrameBufferDisplay(height, width)
-
-            // mirror effect
-            mSphericalMirror = FrameBufferDisplay(height, width)
-            mReflectionEffect = ReflectionEffect(height, width)
+            ratio = width.toFloat() / height.toFloat()
+            Matrix.orthoM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, -10f, 200f)
         } else {
-            ratio = (height.toFloat() / width)
-            Matrix.orthoM(mProjectionMatrix, 0, -1f, 1f, -ratio, ratio, -10f, 200f)
-
-//            mSphericalMirror = FrameBufferDisplay(width, height)
-
-            // mirror effect
-            mSphericalMirror = FrameBufferDisplay(width * 2, height)
-            mReflectionEffect = ReflectionEffect((height * SCALE_FACTOR_FOR_PORTRAIT).toInt(), width)
-
-            mLeftView = StereoView(width, height, true)
-            mLeftView = StereoView(width, height, false)
+            ratio = height.toFloat() / width.toFloat()
+            Matrix.orthoM(projectionMatrix, 0, -1f, 1f, -ratio, ratio, -10f, 200f)
         }
+        mViewportWidth = width
+        viewportheight = height
+        mLeftView = StereoView(true, height, width) //left
+        mRightView = StereoView(false, height, width) //right
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
-        GLES32.glClearColor(0f, 0f, 0f, 1f)
+        GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         mZoom = 1.0f
     }
 
@@ -267,11 +148,6 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     companion object {
-
-        private const val SCALE_FACTOR = 1.2f
-        private const val MIRROR_SCALE_FACTOR = 0.25f
-        private const val SCALE_FACTOR_FOR_PORTRAIT = 3.5f
-
         fun checkGlError(glOperation: String) {
             var error: Int
             if (GLES32.glGetError().also { error = it } != GLES32.GL_NO_ERROR) {

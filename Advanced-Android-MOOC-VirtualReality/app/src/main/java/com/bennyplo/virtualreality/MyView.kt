@@ -2,9 +2,9 @@ package com.bennyplo.virtualreality
 
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import com.bennyplo.virtualreality.ref.MyView
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -17,19 +17,21 @@ class MyView(context: Context) : GLSurfaceView(context) {
     private var mPreviousX = 0f //previous touch x position
     private var mPreviousY = 0f //previous touch y position
     private var mTouchDistance = 0f //distance between the 2 finger touches
-    private var ptCount = 0 //touch counter
-    private val mRenderer: MyRenderer
+    private var ptcount = 0 //touch counter
+
+    private val renderer: MyRenderer by lazy {
+        MyRenderer(context) // Set the Renderer for drawing on the GLSurfaceView
+    }
 
     private val mViewScaledTouchSlop //number of pixels that a finger is allowed to move
             : Float
 
     init {
         setEGLContextClientVersion(2) // Create an OpenGL ES 2.0 context.
-        mRenderer = MyRenderer(context) // Set the Renderer for drawing on the GLSurfaceView
-        setRenderer(mRenderer)
+        setRenderer(renderer)
         val viewConfig = ViewConfiguration.get(context) //get the view configuration
-        mViewScaledTouchSlop =
-            viewConfig.scaledTouchSlop.toFloat() //number of pixels that a finger is allowed to move
+        //number of pixels that a finger is allowed to move
+        mViewScaledTouchSlop = viewConfig.scaledTouchSlop.toFloat()
         // Render the view only when there is a change in the drawing data
         renderMode = RENDERMODE_WHEN_DIRTY
     }
@@ -39,13 +41,13 @@ class MyView(context: Context) : GLSurfaceView(context) {
         val y = e.y //y position of the touch
         when (e.action) {
             MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP -> {
-                ptCount-- //decrement the counter
-                if (ptCount < -2) //if it is less than -2 -> reset the 2nd touch event positions
+                ptcount-- //decrement the counter
+                if (ptcount < -2) //if it is less than -2 -> reset the 2nd touch event positions
                 {
                     m2TouchEventX = -1f
                     m2TouchEventY = -1f
                 }
-                if (ptCount < -1) //if it is less than -1 -> reset the 1st touch event positions
+                if (ptcount < -1) //if it is less than -1 -> reset the 1st touch event positions
                 {
                     m1TouchEventX = -1f
                     m1TouchEventY = -1f
@@ -53,12 +55,12 @@ class MyView(context: Context) : GLSurfaceView(context) {
             }
 
             MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_DOWN -> {
-                ptCount++
-                if (ptCount == 1) //1 finger
+                ptcount++
+                if (ptcount == 1) //1 finger
                 {
                     m1TouchEventX = e.getX(0)
                     m1TouchEventY = e.getY(0)
-                } else if (ptCount == 2) //2 finger
+                } else if (ptcount == 2) //2 finger
                 {
                     m2TouchEventX = e.getX(0)
                     m2TouchEventY = e.getY(0)
@@ -72,7 +74,7 @@ class MyView(context: Context) : GLSurfaceView(context) {
                     m2TouchEventX = e.getX(0)
                     m2TouchEventY = e.getY(0)
                     mTouchDistance = distance(e, 0, 1) //calculate the distance
-                    mRenderer.setZoom(mTouchDistance * TOUCH_ZOOM_FACTOR) // set the zoom
+                    renderer.setZoom(mTouchDistance * TOUCH_ZOOM_FACTOR) // set the zoom
                     requestRender() //update the screen
                 } else {
                     var dx = x - mPreviousX
@@ -86,8 +88,8 @@ class MyView(context: Context) : GLSurfaceView(context) {
                         dy *= -1
                     }
                     //set the rotation angles
-                    mRenderer.yAngle = mRenderer.yAngle + dx * TOUCH_SCALE_FACTOR
-                    mRenderer.xAngle = mRenderer.xAngle + dy * TOUCH_SCALE_FACTOR
+                    renderer.yAngle = renderer.yAngle + dx * TOUCH_SCALE_FACTOR
+                    renderer.xAngle = renderer.xAngle + dy * TOUCH_SCALE_FACTOR
                     requestRender()
                 }
             }
@@ -98,9 +100,9 @@ class MyView(context: Context) : GLSurfaceView(context) {
     }
 
     fun sensorRotates(pitch: Double, yaw: Double, roll: Double) {
-        mRenderer.xAngle = pitch.toFloat()
-        mRenderer.yAngle = yaw.toFloat()
-        mRenderer.zAngle = roll.toFloat()
+        renderer.xAngle = pitch.toFloat()
+        renderer.yAngle = yaw.toFloat()
+        renderer.zAngle = roll.toFloat()
         requestRender()
     }
 

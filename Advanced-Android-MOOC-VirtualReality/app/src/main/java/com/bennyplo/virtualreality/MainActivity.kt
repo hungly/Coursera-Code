@@ -13,11 +13,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.bennyplo.virtualreality.ref.MyView
+//import com.bennyplo.virtualreality.ref.MyView
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    private var glView: com.bennyplo.virtualreality.ref.MyView? = null
+    private var glView: MyView? = null
     private var rotationSensor: Sensor? = null
     private var sensorManager: SensorManager? = null
 
