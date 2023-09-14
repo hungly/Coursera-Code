@@ -37,18 +37,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     }
 
-//    override fun onPause() {
-//        super.onPause()
-//        sensorManager?.unregisterListener(this)
-//    }
+    override fun onPause() {
+        super.onPause()
+        sensorManager?.unregisterListener(this)
+    }
 
-//    override fun onResume() {
-//        super.onResume()
-//
-//        rotationSensor?.let {
-//            sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
-//        }
-//    }
+    override fun onResume() {
+        super.onResume()
+
+        rotationSensor?.let {
+            sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
+        }
+    }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val pitch = Math.toDegrees(orientation[1].toDouble())
         val roll = Math.toDegrees(orientation[2].toDouble())
 
-//        glView?.sensorRotates(pitch, yaw, roll)
+        glView?.sensorRotates(pitch, yaw, roll)
     }
 
 }

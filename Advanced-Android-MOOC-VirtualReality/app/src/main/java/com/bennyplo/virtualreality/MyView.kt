@@ -100,9 +100,9 @@ class MyView(context: Context) : GLSurfaceView(context) {
     }
 
     fun sensorRotates(pitch: Double, yaw: Double, roll: Double) {
-        renderer.xAngle = pitch.toFloat()
-        renderer.yAngle = yaw.toFloat()
-        renderer.zAngle = roll.toFloat()
+        renderer.xAngle = -pitch.toFloat()
+        renderer.yAngle = -yaw.toFloat()
+        renderer.zAngle = -roll.toFloat()
         requestRender()
     }
 

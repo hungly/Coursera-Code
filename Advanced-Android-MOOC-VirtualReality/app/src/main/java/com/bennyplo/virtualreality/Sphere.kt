@@ -169,7 +169,7 @@ class Sphere(private val context: Context) {
         SpecularLightLocation[1] = -4f
         SpecularLightLocation[2] = 2f
         ///============
-        textureDataHandle = loadTexture(context, R.drawable.world)
+        textureDataHandle = loadTexture(context, R.drawable.campus)
         //////////////////////
         // prepare shaders and OpenGL program
         val vertexShader: Int =

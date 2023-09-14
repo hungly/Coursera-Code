@@ -117,10 +117,10 @@ class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
             Matrix.frustumM(
                 mProjectionMatrix,
                 0,
-                FRUSTUM_SHIFT - aspect,
-                FRUSTUM_SHIFT + aspect,
-                -1f,
-                1f,
+                (FRUSTUM_SHIFT - aspect) / SCALE_FACTOR,
+                (FRUSTUM_SHIFT + aspect) / SCALE_FACTOR,
+                -1f / SCALE_FACTOR,
+                1f / SCALE_FACTOR,
                 NEAR_Z,
                 FAR_Z
             )
@@ -142,10 +142,10 @@ class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
             Matrix.frustumM(
                 mProjectionMatrix,
                 0,
-                -aspect - FRUSTUM_SHIFT,
-                aspect - FRUSTUM_SHIFT,
-                -1f,
-                1f,
+                (-aspect - FRUSTUM_SHIFT) / SCALE_FACTOR,
+                (aspect - FRUSTUM_SHIFT) / SCALE_FACTOR,
+                -1f / SCALE_FACTOR,
+                1f / SCALE_FACTOR,
                 NEAR_Z,
                 FAR_Z
             )
@@ -363,8 +363,9 @@ class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
         private const val NEAR_Z = 1f
         private const val FAR_Z = 8f
         private const val SCREEN_Z = -10f
-        private const val IOD = 0.8f
+        private const val IOD = 0.65f
         private const val FRUSTUM_SHIFT = -(IOD / 2) * NEAR_Z / SCREEN_Z
+        private const val SCALE_FACTOR = 3.5f
     }
 
 }
