@@ -1,6 +1,7 @@
 package com.bennyplo.virtualreality
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,10 +14,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+
 //import com.bennyplo.virtualreality.ref.MyView
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    private var _textureBitmap: Bitmap? = null
     private var glView: MyView? = null
     private var rotationSensor: Sensor? = null
     private var sensorManager: SensorManager? = null
@@ -60,6 +63,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
     }
+
+    fun getTextureBitmap(): Bitmap? = _textureBitmap
 
     private fun setupFullscreen() {
         WindowCompat.setDecorFitsSystemWindows(window, false)

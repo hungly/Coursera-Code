@@ -353,19 +353,19 @@ class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
 //        )
         // mirror effect
         private val DISPLAY_TEXTURE_COORDS = floatArrayOf(
-            0f, 0f,
             1f, 0f,
-            1f, 1f,
-            0f, 1f
+            0f, 0f,
+            0f, 1f,
+            1f, 1f
         )
 
         private const val DEPTH_Z = -5f
         private const val NEAR_Z = 1f
-        private const val FAR_Z = 8f
+        private const val FAR_Z = 11f
         private const val SCREEN_Z = -10f
         private const val IOD = 0.65f
         private const val FRUSTUM_SHIFT = -(IOD / 2) * NEAR_Z / SCREEN_Z
-        private const val SCALE_FACTOR = 3.5f
+        private const val SCALE_FACTOR = 1f
     }
 
 }

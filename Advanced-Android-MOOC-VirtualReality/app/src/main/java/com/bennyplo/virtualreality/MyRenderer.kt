@@ -28,6 +28,10 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         Sphere(context)
     }
 
+    private val mFlatSurface by lazy {
+        FlatSurface(context)
+    }
+
     private val mVMatrix = FloatArray(16) // model view matrix
     private val mVPMatrix = FloatArray(16) // model view projection matrix
     private val modelMatrix = FloatArray(16) // model  matrix
@@ -97,6 +101,7 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
             mSphere.draw(mVPMatrix)
+            mFlatSurface.draw(mVPMatrix)
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) //render onto the screen
@@ -109,6 +114,7 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
             mSphere.draw(mVPMatrix)
+            mFlatSurface.draw(mVPMatrix)
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) // render onto the screen

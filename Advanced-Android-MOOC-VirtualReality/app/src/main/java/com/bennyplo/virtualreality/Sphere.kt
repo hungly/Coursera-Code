@@ -125,7 +125,7 @@ class Sphere(private val context: Context) {
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
 
     init {
-        createSphere(2f, 30, 30)
+        createSphere(5f, 30, 30)
         // initialize vertex byte buffer for shape coordinates
         val bb =
             ByteBuffer.allocateDirect(SphereVertex.size * 4) // (# of coordinate values * 4 bytes per float)
