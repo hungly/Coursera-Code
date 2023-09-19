@@ -24,6 +24,10 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         CharacterS()
     }
 
+    private val mWorldSphere by lazy {
+        WorldSphere(context)
+    }
+
     private val mSphere by lazy {
         Sphere(context)
     }
@@ -61,10 +65,6 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
         Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1.0f, 0f, 0f) // rotate around the x-axis
         Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
-        Log.d(
-            "HUNGLY",
-            "onDrawFrame: ${mRotationMatrixX.joinToString(",")}\n${mRotationMatrixY.joinToString(",")}"
-        )
 
         // Set the camera position (View matrix)
         Matrix.setLookAtM(
@@ -100,8 +100,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
-            mSphere.draw(mVPMatrix)
+            mWorldSphere.draw(mVPMatrix)
             mFlatSurface.draw(mVPMatrix)
+            mSphere.draw(mVPMatrix)
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) //render onto the screen
@@ -113,8 +114,9 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
-            mSphere.draw(mVPMatrix)
+            mWorldSphere.draw(mVPMatrix)
             mFlatSurface.draw(mVPMatrix)
+            mSphere.draw(mVPMatrix)
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) // render onto the screen

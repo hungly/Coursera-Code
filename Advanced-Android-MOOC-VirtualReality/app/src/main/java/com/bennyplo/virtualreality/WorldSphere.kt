@@ -12,7 +12,7 @@ import java.nio.IntBuffer
 import kotlin.math.cos
 import kotlin.math.sin
 
-class Sphere(private val context: Context) {
+class WorldSphere(private val context: Context) {
 
     private val attenuateHandle: Int
     private val colorBuffer: FloatBuffer
@@ -24,18 +24,22 @@ class Sphere(private val context: Context) {
     private val diffuseLightLocationHandle: Int
 
     private val fragmentShaderCode =
-        "precision mediump float;" +  //define the precision of float
-                "varying vec4 vColor;" +
-                "varying vec3 vAmbientColor;" +
+        "precision lowp float;" +
+                "varying vec4 vColor; " +
+                "varying vec3 vLightWeighting;" +
                 "varying vec4 vDiffuseColor;" +
                 "varying float vDiffuseLightWeighting;" +
+                "varying float vPointLightWeighting;" +
                 "varying vec4 vSpecularColor;" +
                 "varying float vSpecularLightWeighting; " +
+                "varying vec2 vTextureCoordinate;" +
+                "uniform sampler2D uTextureSampler;" +  //texture
                 "void main() {" +
                 "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
                 "   vec4 specularColor = vSpecularLightWeighting * vSpecularColor;" +
-                "   gl_FragColor = vec4(vColor.xyz * vAmbientColor, 1) + specularColor + diffuseColor;" +
-                "}" //change the colour based on the variable from the vertex shader
+                "   vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.s, vTextureCoordinate.t));" +  //load the color texture
+                "   gl_FragColor = vec4(fragmentColor.rgb * vLightWeighting, fragmentColor.a) + specularColor + diffuseColor;" +  //the fragment color
+                "}"
 
     private val indexBuffer: IntBuffer
     private val mColorHandle: Int
@@ -66,45 +70,62 @@ class Sphere(private val context: Context) {
     private val vertexShaderCode =
         "attribute vec3 aVertexPosition;" +
                 "uniform mat4 uMVPMatrix;varying vec4 vColor;" +
-                "attribute vec3 aVertexNormal;" +//attribute variable for normal vectors
-                "attribute vec4 aVertexColor;" +//attribute variable for vertex colors
-                "uniform vec3 uLightSourceLocation;" +//location of the light source (for diffuse and specular light)
-                "uniform vec3 uAmbientColor;" +//uniform variable for Ambient color
-                "varying vec3 vAmbientColor;" +
-                "uniform vec4 uDiffuseColor;" +//color of the diffuse light
+                "attribute vec3 aVertexNormal;" +
+                "attribute vec4 aVertexColor;" +
+                "uniform vec3 uPointLightingLocation;" +
+                "uniform vec3 uPointLightingColor;" +
+                "uniform vec3 uAmbientColor;" +
+                "varying vec3 vLightWeighting;" +
+                "uniform vec3 uDiffuseLightLocation;" +
+                "uniform vec4 uDiffuseColor;" +  //color of the diffuse light
                 "varying vec4 vDiffuseColor;" +
-                "varying float vDiffuseLightWeighting;" +//diffuse light intensity
-                "uniform vec3 uAttenuation;" +//light attenuation
+                "varying float vPointLightWeighting;" +
+                "varying float vDiffuseLightWeighting;" +
+                "uniform vec3 uAttenuation;" +  //light attenuation
                 "uniform vec4 uSpecularColor;" +
                 "varying vec4 vSpecularColor;" +
                 "varying float vSpecularLightWeighting; " +
+                "uniform vec3 uSpecularLightLocation;" +
                 "uniform float uMaterialShininess;" +
-                //----------
+                "attribute vec2 aTextureCoordinate; " +  //texture coordinate
+                "varying vec2 vTextureCoordinate;" +
                 "void main() {" +
-                "   gl_Position = uMVPMatrix *vec4(aVertexPosition, 1.0);" +
+                "   gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);" +
+                "   vLightWeighting = vec3(1.0, 1.0, 1.0);     " +
                 "   vec4 mvPosition = uMVPMatrix * vec4(aVertexPosition, 1.0);" +
-                "   vec3 lightDirection = normalize(uLightSourceLocation - mvPosition.xyz);" +
+                "   vec3 lightDirection = normalize(uPointLightingLocation - mvPosition.xyz);" +
+                "   vec3 diffuseLightDirection = normalize(uDiffuseLightLocation - mvPosition.xyz);" +
                 "   vec3 transformedNormal = normalize((uMVPMatrix * vec4(aVertexNormal, 0.0)).xyz);" +
-                "   vAmbientColor = uAmbientColor;" +
+                "   vLightWeighting = uAmbientColor;" +
+                "   gl_PointSize = 40.0;" +
                 "   vDiffuseColor = uDiffuseColor;" +
                 "   vSpecularColor = uSpecularColor; " +
+                "   float specularLightWeighting = 0.0;" +
                 "   vec3 eyeDirection = normalize(-mvPosition.xyz);" +
+                "   vec3 specularlightDirection = normalize(uSpecularLightLocation - mvPosition.xyz);" +
+                "   vec3 inverseLightDirection = normalize(uPointLightingLocation);" +
                 "   vec3 reflectionDirection = reflect(-lightDirection, transformedNormal);" +
-                "   vec3 vertexToLightSource = mvPosition.xyz - uLightSourceLocation;" +
+                "   vPointLightWeighting = distance(uPointLightingLocation, mvPosition.xyz);" +
+                "   vPointLightWeighting = 10.0 / (vPointLightWeighting * vPointLightWeighting);" +
+                "   vec3 vertexToLightSource = mvPosition.xyz - uPointLightingLocation;" +
                 "   float diff_light_dist = length(vertexToLightSource);" +
                 "   float attenuation = 1.0 / (uAttenuation.x" +
                 "                           + uAttenuation.y * diff_light_dist" +
                 "                           + uAttenuation.z * diff_light_dist * diff_light_dist);" +
-                "   vDiffuseLightWeighting = attenuation*max(dot(transformedNormal,lightDirection),0.0);" +
-                "   vSpecularLightWeighting = attenuation*pow(max(dot(reflectionDirection, eyeDirection), 0.0), uMaterialShininess);" +
-                "   vColor = aVertexColor;" +
-                "}" //get the colour from the application program
+                "   float diffuseLightWeighting = 0.0;" +
+                "   diffuseLightWeighting = attenuation*max(dot(transformedNormal, lightDirection), 0.0);" +
+                "   vDiffuseLightWeighting = diffuseLightWeighting;" +
+                "   specularLightWeighting = attenuation*pow(max(dot(reflectionDirection,eyeDirection), 0.0), uMaterialShininess);" +
+                "   vSpecularLightWeighting = specularLightWeighting;" +
+                "   vColor=aVertexColor;" +
+                "   vTextureCoordinate = aTextureCoordinate;" +
+                "}"
 
     //---------
     private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
 
     init {
-        createSphere(1f, 30, 30)
+        createSphere(5f, 30, 30)
         // initialize vertex byte buffer for shape coordinates
         val bb =
             ByteBuffer.allocateDirect(SphereVertex.size * 4) // (# of coordinate values * 4 bytes per float)
@@ -134,9 +155,9 @@ class Sphere(private val context: Context) {
         textureBuffer.put(TextureCoordinateData)
         textureBuffer.position(0)
         ///============
-        LightLocation[0] = 0f
-        LightLocation[1] = 0f
-        LightLocation[2] = -10f
+        LightLocation[0] = 10f
+        LightLocation[1] = 10f
+        LightLocation[2] = 10f
         DiffuseLightLocation[0] = 2f
         DiffuseLightLocation[1] = 0.2f
         DiffuseLightLocation[2] = 2f
@@ -198,7 +219,7 @@ class Sphere(private val context: Context) {
         MyRenderer.Companion.checkGlError("glVertexAttribPointer")
         // get handle to shape's transformation matrix
         pointLightingLocationHandle =
-            GLES32.glGetUniformLocation(mProgram, "uLightSourceLocation")
+            GLES32.glGetUniformLocation(mProgram, "uPointLightingLocation")
         diffuseLightLocationHandle = GLES32.glGetUniformLocation(mProgram, "uDiffuseLightLocation")
         diffuseColorHandle = GLES32.glGetUniformLocation(mProgram, "uDiffuseColor")
         DiffuseColor[0] = 1f
@@ -396,7 +417,7 @@ class Sphere(private val context: Context) {
         private var Attenuation = FloatArray(3) //light attenuation
         private var DiffuseColor = FloatArray(4) //diffuse light colour
         private var SpecularColor = FloatArray(4) //specular highlight colour
-        private var MaterialShininess = 20f //material shininess
+        private var MaterialShininess = 10f //material shininess
         private var SpecularLightLocation = FloatArray(3) //specular light location
 
         //--------
