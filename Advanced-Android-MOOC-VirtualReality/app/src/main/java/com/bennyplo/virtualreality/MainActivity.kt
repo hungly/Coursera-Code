@@ -43,14 +43,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onPause() {
         super.onPause()
         sensorManager?.unregisterListener(this)
+        glView?.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-
         rotationSensor?.let {
             sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
         }
+        glView?.onResume()
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

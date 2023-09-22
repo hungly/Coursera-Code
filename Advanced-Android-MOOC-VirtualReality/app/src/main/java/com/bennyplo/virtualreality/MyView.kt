@@ -5,19 +5,31 @@ import android.opengl.GLSurfaceView
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import com.bennyplo.virtualreality.ref.MyView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sqrt
 
 class MyView(context: Context) : GLSurfaceView(context) {
 
+    private var isRotating = true
     private var m1TouchEventX = 0f
     private var m1TouchEventY = 0f //1st finger touch location
     private var m2TouchEventX = 0f
     private var m2TouchEventY = 0f //2nd finger touch location
+    private var mAngle: Float = 0F
     private var mPreviousX = 0f //previous touch x position
     private var mPreviousY = 0f //previous touch y position
     private var mTouchDistance = 0f //distance between the 2 finger touches
     private var ptcount = 0 //touch counter
+    private var rotateJob: Job? = null
+
+    private var pX = 0F
+    private var dir = true
 
     private val renderer: MyRenderer by lazy {
         MyRenderer(context) // Set the Renderer for drawing on the GLSurfaceView
@@ -36,68 +48,68 @@ class MyView(context: Context) : GLSurfaceView(context) {
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    override fun onTouchEvent(e: MotionEvent): Boolean { //touch event
-        val x = e.x //x position of the touch
-        val y = e.y //y position of the touch
-        when (e.action) {
-            MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP -> {
-                ptcount-- //decrement the counter
-                if (ptcount < -2) //if it is less than -2 -> reset the 2nd touch event positions
-                {
-                    m2TouchEventX = -1f
-                    m2TouchEventY = -1f
-                }
-                if (ptcount < -1) //if it is less than -1 -> reset the 1st touch event positions
-                {
-                    m1TouchEventX = -1f
-                    m1TouchEventY = -1f
-                }
-            }
-
-            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_DOWN -> {
-                ptcount++
-                if (ptcount == 1) //1 finger
-                {
-                    m1TouchEventX = e.getX(0)
-                    m1TouchEventY = e.getY(0)
-                } else if (ptcount == 2) //2 finger
-                {
-                    m2TouchEventX = e.getX(0)
-                    m2TouchEventY = e.getY(0)
-                }
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                m2TouchEventX = e.getX(0)
-                m2TouchEventY = e.getY(0)
-                if (isPinchGesture(e)) { //check to see if it is a pinch gesture
-                    m2TouchEventX = e.getX(0)
-                    m2TouchEventY = e.getY(0)
-                    mTouchDistance = distance(e, 0, 1) //calculate the distance
-                    renderer.setZoom(mTouchDistance * TOUCH_ZOOM_FACTOR) // set the zoom
-                    requestRender() //update the screen
-                } else {
-                    var dx = x - mPreviousX
-                    var dy = y - mPreviousY
-                    // reverse direction of rotation above the mid-line
-                    if (y > height / 2) {
-                        dx *= -1
-                    }
-                    // reverse direction of rotation to left of the mid-line
-                    if (x < width / 2) {
-                        dy *= -1
-                    }
-                    //set the rotation angles
-                    renderer.yAngle = renderer.yAngle + dx * TOUCH_SCALE_FACTOR
-                    renderer.xAngle = renderer.xAngle + dy * TOUCH_SCALE_FACTOR
-                    requestRender()
-                }
-            }
-        }
-        mPreviousX = x
-        mPreviousY = y
-        return true
-    }
+//    override fun onTouchEvent(e: MotionEvent): Boolean { //touch event
+//        val x = e.x //x position of the touch
+//        val y = e.y //y position of the touch
+//        when (e.action) {
+//            MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP -> {
+//                ptcount-- //decrement the counter
+//                if (ptcount < -2) //if it is less than -2 -> reset the 2nd touch event positions
+//                {
+//                    m2TouchEventX = -1f
+//                    m2TouchEventY = -1f
+//                }
+//                if (ptcount < -1) //if it is less than -1 -> reset the 1st touch event positions
+//                {
+//                    m1TouchEventX = -1f
+//                    m1TouchEventY = -1f
+//                }
+//            }
+//
+//            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_DOWN -> {
+//                ptcount++
+//                if (ptcount == 1) //1 finger
+//                {
+//                    m1TouchEventX = e.getX(0)
+//                    m1TouchEventY = e.getY(0)
+//                } else if (ptcount == 2) //2 finger
+//                {
+//                    m2TouchEventX = e.getX(0)
+//                    m2TouchEventY = e.getY(0)
+//                }
+//            }
+//
+//            MotionEvent.ACTION_MOVE -> {
+//                m2TouchEventX = e.getX(0)
+//                m2TouchEventY = e.getY(0)
+//                if (isPinchGesture(e)) { //check to see if it is a pinch gesture
+//                    m2TouchEventX = e.getX(0)
+//                    m2TouchEventY = e.getY(0)
+//                    mTouchDistance = distance(e, 0, 1) //calculate the distance
+//                    renderer.setZoom(mTouchDistance * TOUCH_ZOOM_FACTOR) // set the zoom
+//                    requestRender() //update the screen
+//                } else {
+//                    var dx = x - mPreviousX
+//                    var dy = y - mPreviousY
+//                    // reverse direction of rotation above the mid-line
+//                    if (y > height / 2) {
+//                        dx *= -1
+//                    }
+//                    // reverse direction of rotation to left of the mid-line
+//                    if (x < width / 2) {
+//                        dy *= -1
+//                    }
+//                    //set the rotation angles
+//                    renderer.yAngle = renderer.yAngle + dx * TOUCH_SCALE_FACTOR
+//                    renderer.xAngle = renderer.xAngle + dy * TOUCH_SCALE_FACTOR
+//                    requestRender()
+//                }
+//            }
+//        }
+//        mPreviousX = x
+//        mPreviousY = y
+//        return true
+//    }
 
     fun sensorRotates(pitch: Double, yaw: Double, roll: Double) {
         renderer.xAngle = pitch.toFloat()
@@ -120,6 +132,20 @@ class MyView(context: Context) : GLSurfaceView(context) {
         }
     }
 
+
+    override fun onPause() {
+        super.onPause()
+        isRotating = false
+        rotateJob?.cancel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isRotating = true
+        startRotating()
+    }
+
+
     private fun isPinchGesture(event: MotionEvent): Boolean { //check if it is a pinch gesture
         if (event.pointerCount == 2) { //multi-touch
             //check the distances between the touch locations
@@ -134,6 +160,19 @@ class MyView(context: Context) : GLSurfaceView(context) {
             }
         }
         return false
+    }
+
+    private fun startRotating() {
+        rotateJob?.cancel()
+        rotateJob = CoroutineScope(Dispatchers.Default + SupervisorJob()).launch {
+            while (isRotating) {
+                delay(10)
+                renderer.ySphereAngle = mAngle
+                requestRender()
+                mAngle++
+                if (mAngle >= 360) mAngle = 0F
+            }
+        }
     }
 
     companion object {

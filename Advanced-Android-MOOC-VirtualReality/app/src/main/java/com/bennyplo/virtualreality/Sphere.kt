@@ -9,6 +9,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -241,8 +242,8 @@ class Sphere(private val context: Context) {
         GLES32.glUniform3fv(diffuseLightLocationHandle, 1, DiffuseLightLocation, 0)
         GLES32.glUniform4fv(diffuseColorHandle, 1, DiffuseColor, 0)
         GLES32.glUniform3fv(attenuateHandle, 1, Attenuation, 0)
-        GLES32.glUniform3f(pointLightColorHandle, 0.3f, 0.3f, 0.3f)
-        GLES32.glUniform3f(uAmbientColorHandle, 0.6f, 0.6f, 0.6f)
+        GLES32.glUniform3f(pointLightColorHandle, 1f, 1f, 1f)
+        GLES32.glUniform3f(uAmbientColorHandle, 0.5f, 0.5f, 0.5f)
         GLES32.glUniform4fv(specularColorHandle, 1, SpecularColor, 0)
         GLES32.glUniform1f(materialShininessHandle, MaterialShininess)
         GLES32.glUniform3fv(specularLightLocationHandle, 1, SpecularLightLocation, 0)
@@ -307,6 +308,8 @@ class Sphere(private val context: Context) {
             val theta = row * Math.PI / noLatitude
             val sinTheta = sin(theta)
             val cosTheta = cos(theta)
+            var tColor = -0.5f
+            val tColorInc = 1 / (noLongitude + 1).toFloat()
             for (col in 0..noLongitude) {
                 val phi = col * 2 * Math.PI / noLongitude
                 val sinPhi = sin(phi)
@@ -320,13 +323,14 @@ class Sphere(private val context: Context) {
                 vertices[vertexIndex++] = (radius * cosTheta).toFloat() + dist
                 vertices[vertexIndex++] = (radius * z).toFloat()
                 pColor[colorIndex++] = 1f
-                pColor[colorIndex++] = 0f
+                pColor[colorIndex++] = abs(tColor)
                 pColor[colorIndex++] = 0f
                 pColor[colorIndex++] = 1f
                 val u = ((col / noLongitude.toFloat() - 0.5f) * -1) + 0.5f
                 val v = row / noLatitude.toFloat()
                 textureCoordData[textureIndex++] = u
                 textureCoordData[textureIndex++] = v
+                tColor += tColorInc
             }
         }
         for (row in 0 until noLatitude) {

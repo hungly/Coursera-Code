@@ -38,9 +38,11 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     private val mVMatrix = FloatArray(16) // model view matrix
     private val mVPMatrix = FloatArray(16) // model view projection matrix
-    private val modelMatrix = FloatArray(16) // model  matrix
+//    private val modelMatrix = FloatArray(16) // model  matrix
     private val projectionMatrix = FloatArray(16) // projection matrix
     private val viewMatrix = FloatArray(16) // view matrix
+    private val sphereMVMatrix = FloatArray(16) // model view matrix
+    private val sphereMVPMatrix = FloatArray(16) // model view projection matrix
     var xAngle = 0f // x-rotation angle
 
     //set the rotational angles and zoom factors
@@ -48,61 +50,70 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     var zAngle = 0f // z-rotation angle
 
+    var ySphereAngle = 0f
+
     override fun onDrawFrame(unused: GL10) {
-        val mRotationMatrixX = FloatArray(16)
-        val mRotationMatrixY = FloatArray(16)
-        val mRotationMatrixZ = FloatArray(16)
+//        val mRotationMatrixX = FloatArray(16)
+//        val mRotationMatrixY = FloatArray(16)
+//        val mRotationMatrixZ = FloatArray(16)
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
         GLES32.glClearDepthf(1.0f) // set up the depth buffer
         GLES32.glEnable(GLES32.GL_DEPTH_TEST) // enable depth test (so, it will not look through the surfaces)
         GLES32.glDepthFunc(GLES32.GL_LEQUAL) // indicate what type of depth test
-        Matrix.setIdentityM(
-            mVPMatrix,
-            0
-        ) // set the model view projection matrix to an identity matrix
-        Matrix.setIdentityM(mVMatrix, 0) // set the model view  matrix to an identity matrix
-        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
-        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1.0f, 0f, 0f) // rotate around the x-axis
-        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
+//        Matrix.setIdentityM(
+//            mVPMatrix,
+//            0
+//        ) // set the model view projection matrix to an identity matrix
+//        Matrix.setIdentityM(mVMatrix, 0) // set the model view  matrix to an identity matrix
+//        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
+//        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1.0f, 0f, 0f) // rotate around the x-axis
+//        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
 
         // Set the camera position (View matrix)
-        Matrix.setLookAtM(
-            viewMatrix,
-            0,
-            0.0f,
-            0f,
-            1.0f,  // camera is at (0,0,1)
-            0f,
-            0f,
-            0f,  // looks at the origin
-            0f,
-            1f,
-            0.0f
-        ) // head is down (set to (0,1,0) to look from the top)
-        Matrix.translateM(modelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) // move backward for 5 units
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixX, 0)
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixY, 0)
+//        Matrix.setLookAtM(
+//            viewMatrix,
+//            0,
+//            0.0f,
+//            0f,
+//            1.0f,  // camera is at (0,0,1)
+//            0f,
+//            0f,
+//            0f,  // looks at the origin
+//            0f,
+//            1f,
+//            0.0f
+//        ) // head is down (set to (0,1,0) to look from the top)
+//        Matrix.translateM(modelMatrix, 0, 0.0f, 0.0f, -5f + mZoom) // move backward for 5 units
+//        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixX, 0)
+//        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, mRotationMatrixY, 0)
         // Calculate the projection and view transformation
         // Calculate the model view matrix
-        Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
-        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
+//        Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+//        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
 
         // mSphere.draw(mMVPMatrix);
 
         // Draw the frame buffer
         GLES32.glViewport(0, 0, mViewportWidth, viewportheight)
-        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
+//        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
         mLeftView?.let {
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
             GLES32.glViewport(0, 0, it.width, it.height)
             GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+
             val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
             mWorldSphere.draw(mVPMatrix)
             mFlatSurface.draw(mVPMatrix)
-            mSphere.draw(mVPMatrix)
+
+            val pSphereMatrix = it.getModelMatrix(xAngle, yAngle + ySphereAngle, zAngle)
+            Matrix.multiplyMM(sphereMVMatrix, 0, it.mFrameViewMatrix, 0, pSphereMatrix, 0)
+            Matrix.multiplyMM(sphereMVPMatrix, 0, it.mProjectionMatrix, 0, sphereMVMatrix, 0)
+            mSphere.setLightLocation(5f,0f,-8f)
+            mSphere.draw(sphereMVPMatrix)
+
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) //render onto the screen
@@ -111,12 +122,19 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, it.frameBuffer[0])
             GLES32.glViewport(0, 0, it.width, it.height)
             GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
+
             val pMatrix = it.getModelMatrix(xAngle, yAngle, zAngle)
             Matrix.multiplyMM(mVMatrix, 0, it.mFrameViewMatrix, 0, pMatrix, 0)
             Matrix.multiplyMM(mVPMatrix, 0, it.mProjectionMatrix, 0, mVMatrix, 0)
             mWorldSphere.draw(mVPMatrix)
             mFlatSurface.draw(mVPMatrix)
-            mSphere.draw(mVPMatrix)
+
+            val pSphereMatrix = it.getModelMatrix(xAngle, yAngle + ySphereAngle, zAngle)
+            Matrix.multiplyMM(sphereMVMatrix, 0, it.mFrameViewMatrix, 0, pSphereMatrix, 0)
+            Matrix.multiplyMM(sphereMVPMatrix, 0, it.mProjectionMatrix, 0, sphereMVMatrix, 0)
+            mSphere.setLightLocation(-5f,0f,-8f)
+            mSphere.draw(sphereMVPMatrix)
+
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) // render onto the screen
@@ -156,6 +174,10 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     fun setZoom(zoom: Float) {
         mZoom = zoom
+    }
+
+    fun setLightLocation(pX:Float, pY:Float, pZ:Float) {
+        mSphere.setLightLocation(pX, pY, pZ)
     }
 
     companion object {
