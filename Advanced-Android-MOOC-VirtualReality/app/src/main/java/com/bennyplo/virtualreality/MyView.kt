@@ -2,15 +2,16 @@ package com.bennyplo.virtualreality
 
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
-import com.bennyplo.virtualreality.ref.MyView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Random
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -22,6 +23,13 @@ class MyView(context: Context) : GLSurfaceView(context) {
     private var m2TouchEventX = 0f
     private var m2TouchEventY = 0f //2nd finger touch location
     private var mAngle: Float = 0F
+    private var mCharRotateAngleY: Float = 0F
+    private var mCharRotateAngleZ: Float = 0F
+    private var mCharRotateAngleZDir: Float = 3F
+    private var mCharZPos:Float = 3F
+    private var mCharZPosDir:Float = 0.05F
+    private var mCharZPosLower:Float = 2F
+    private var mCharZPosUpper:Float = 4F
     private var mPreviousX = 0f //previous touch x position
     private var mPreviousY = 0f //previous touch y position
     private var mTouchDistance = 0f //distance between the 2 finger touches
@@ -168,9 +176,32 @@ class MyView(context: Context) : GLSurfaceView(context) {
             while (isRotating) {
                 delay(10)
                 renderer.ySphereAngle = mAngle
+
+                renderer.yCharAngle = mAngle
+                renderer.yCharRotation = mCharRotateAngleY
+                renderer.zCharRotation = mCharRotateAngleZ
+                renderer.zCharPos = mCharZPos
+
                 requestRender()
                 mAngle++
                 if (mAngle >= 360) mAngle = 0F
+
+                mCharRotateAngleY += 3F
+                if (mCharRotateAngleY >= 360) mCharRotateAngleY = 0F
+
+                mCharRotateAngleZ += mCharRotateAngleZDir
+                if (mCharRotateAngleZ < -10) {
+                    mCharRotateAngleZDir = abs(mCharRotateAngleZDir)
+                } else if (mCharRotateAngleZ > 10) {
+                    mCharRotateAngleZDir = -abs(mCharRotateAngleZDir)
+                }
+
+                mCharZPos += mCharZPosDir
+                if (mCharZPos < mCharZPosLower) {
+                    mCharZPosDir = abs(mCharZPosDir)
+                } else if (mCharZPos > mCharZPosUpper) {
+                    mCharZPosDir = -abs(mCharZPosDir)
+                }
             }
         }
     }

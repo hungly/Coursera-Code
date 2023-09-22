@@ -223,6 +223,44 @@ class StereoView(isLeft: Boolean, pHeight: Int, pWidth: Int) {
         return pModelMatrix
     }
 
+    fun getModelMatrix(
+        rotateX: Float,
+        rotateY: Float,
+        rotateZ: Float,
+        modelRotateX: Float,
+        modelRotateY: Float,
+        modelRotateZ: Float,
+        posZ: Float
+    ): FloatArray {
+        val pModelMatrix = FloatArray(16) //model  matrix
+        val mRotationMatrixX = FloatArray(16) //rotation//  matrix
+        val mRotationMatrixY = FloatArray(16) //rotation//  matrix
+        val mRotationMatrixZ = FloatArray(16) //rotation//  matrix
+        val mModelRotationMatrixX = FloatArray(16) //rotation//  matrix
+        val mModelRotationMatrixY = FloatArray(16) //rotation//  matrix
+        val mModelRotationMatrixZ = FloatArray(16) //rotation//  matrix
+
+        Matrix.setIdentityM(pModelMatrix, 0) //set the model matrix to an identity matrix
+        Matrix.setRotateM(mRotationMatrixX, 0, rotateX, 1.0f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, rotateY, 0f, 1.0f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrixZ, 0, rotateZ, 0f, 0f, 1f) //rotate around the x-axis
+
+        Matrix.setRotateM(mModelRotationMatrixX, 0, modelRotateX, 1.0f, 0f, 0f) //rotate around the x-axis
+        Matrix.setRotateM(mModelRotationMatrixY, 0, modelRotateY, 0f, 1.0f, 0f) //rotate around the y-axis
+        Matrix.setRotateM(mModelRotationMatrixZ, 0, modelRotateZ, 0f, 0f, 1f) //rotate around the x-axis
+
+        Matrix.multiplyMM(pModelMatrix, 0, mFrameModelMatrix, 0, mRotationMatrixX, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixY, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mRotationMatrixZ, 0)
+
+        Matrix.translateM(pModelMatrix, 0, 0f, 0f, posZ)
+
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mModelRotationMatrixX, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mModelRotationMatrixY, 0)
+        Matrix.multiplyMM(pModelMatrix, 0, pModelMatrix, 0, mModelRotationMatrixZ, 0)
+        return pModelMatrix
+    }
+
     private fun createFrameBuffer(width: Int, height: Int) {
         GLES32.glGenFramebuffers(1, frameBuffer, 0)
         GLES32.glGenTextures(1, frameBufferTextureId, 0)

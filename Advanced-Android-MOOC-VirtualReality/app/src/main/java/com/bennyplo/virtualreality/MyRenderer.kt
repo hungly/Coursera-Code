@@ -36,6 +36,10 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
         FlatSurface(context)
     }
 
+    private val mMyChar by lazy {
+        FlatSurfaceMyChar(context)
+    }
+
     private val mVMatrix = FloatArray(16) // model view matrix
     private val mVPMatrix = FloatArray(16) // model view projection matrix
 //    private val modelMatrix = FloatArray(16) // model  matrix
@@ -43,6 +47,8 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private val viewMatrix = FloatArray(16) // view matrix
     private val sphereMVMatrix = FloatArray(16) // model view matrix
     private val sphereMVPMatrix = FloatArray(16) // model view projection matrix
+    private val charMVMatrix = FloatArray(16) // model view matrix
+    private val charMVPMatrix = FloatArray(16) // model view projection matrix
     var xAngle = 0f // x-rotation angle
 
     //set the rotational angles and zoom factors
@@ -52,9 +58,14 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     var ySphereAngle = 0f
 
+    var yCharAngle = 0f
+    var yCharRotation = 0f
+    var zCharRotation = 0f
+    var zCharPos = 4f
+
     override fun onDrawFrame(unused: GL10) {
 //        val mRotationMatrixX = FloatArray(16)
-//        val mRotationMatrixY = FloatArray(16)
+        val mRotationMatrixY = FloatArray(16)
 //        val mRotationMatrixZ = FloatArray(16)
         // Draw background color
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
@@ -68,7 +79,7 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
 //        Matrix.setIdentityM(mVMatrix, 0) // set the model view  matrix to an identity matrix
 //        Matrix.setIdentityM(modelMatrix, 0) // set the model matrix to an identity matrix
 //        Matrix.setRotateM(mRotationMatrixX, 0, xAngle, 1.0f, 0f, 0f) // rotate around the x-axis
-//        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
+        Matrix.setRotateM(mRotationMatrixY, 0, yAngle, 0f, 1.0f, 0f) // rotate around the y-axis
 
         // Set the camera position (View matrix)
 //        Matrix.setLookAtM(
@@ -114,6 +125,19 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             mSphere.setLightLocation(5f,0f,-8f)
             mSphere.draw(sphereMVPMatrix)
 
+            val pCharMatrix = it.getModelMatrix(
+                xAngle,
+                yAngle + yCharAngle,
+                zAngle,
+                0f,
+                -(yAngle + ySphereAngle) + yCharRotation,
+                zCharRotation,
+                zCharPos
+            )
+            Matrix.multiplyMM(charMVMatrix, 0, it.mFrameViewMatrix, 0, pCharMatrix, 0)
+            Matrix.multiplyMM(charMVPMatrix, 0, it.mProjectionMatrix, 0, charMVMatrix, 0)
+            mMyChar.draw(charMVPMatrix)
+
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
             GLES32.glBindFramebuffer(GLES32.GL_FRAMEBUFFER, 0) //render onto the screen
@@ -134,6 +158,19 @@ class MyRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Matrix.multiplyMM(sphereMVPMatrix, 0, it.mProjectionMatrix, 0, sphereMVMatrix, 0)
             mSphere.setLightLocation(-5f,0f,-8f)
             mSphere.draw(sphereMVPMatrix)
+
+            val pCharMatrix = it.getModelMatrix(
+                xAngle,
+                yAngle + yCharAngle,
+                zAngle,
+                0f,
+                -(yAngle + ySphereAngle) + yCharRotation,
+                zCharRotation,
+                zCharPos
+            )
+            Matrix.multiplyMM(charMVMatrix, 0, it.mFrameViewMatrix, 0, pCharMatrix, 0)
+            Matrix.multiplyMM(charMVPMatrix, 0, it.mProjectionMatrix, 0, charMVMatrix, 0)
+            mMyChar.draw(charMVPMatrix)
 
 //            mCharA.draw(mVPMatrix)
 //            mCharS.draw(mVPMatrix)
