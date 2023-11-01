@@ -1,14 +1,15 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     compileSdk 34
     defaultConfig {
-        applicationId "com.bennyplo.graphics2d"
+        applicationId "com.bennyplo.androidgraphics"
         minSdkVersion 15
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -17,10 +18,15 @@ android {
         }
     }
     namespace 'com.bennyplo.androidgraphics'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
