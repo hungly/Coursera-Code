@@ -4,7 +4,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
+import android.util.SparseArray
 import android.view.View
+import androidx.core.util.forEach
+import com.bennyplo.androidgraphics.`object`.Object
+import com.bennyplo.androidgraphics.`object`.Room
 import java.util.Timer
 import java.util.TimerTask
 
@@ -13,18 +18,49 @@ import java.util.TimerTask
  */
 class MyView(context: Context?) : View(context, null) {
 
-    private val redPaint: Paint by lazy {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE // Stroke only no fill
-            color = Color.RED // Color red
-            strokeWidth = 5f // Set the line stroke width to 5
-        }
+    private val path by lazy {
+        Path()
+    }
+
+    private val roomSize by lazy {
+        viewWidth - (viewWidth / 2.5)
+    }
+
+    private val room by lazy {
+        Room(
+            left = 0.0,
+            top = 0.0,
+            right = roomSize.toDouble(),
+            bottom = roomSize.toDouble(),
+            height = 250.0,
+            doorWidth = 80.0,
+            floorColor = Color.RED,
+            wallColor = Color.BLUE,
+            paintStyle = Paint.Style.STROKE
+        )
     }
 
     private val task: TimerTask by lazy {
         object : TimerTask() {
             override fun run() {
+                objects.forEach { key, value ->
+                    when (value) {
+                        is Room -> drawBuffer[key] = value.copy()
+                    }
+                }
                 // Add your rotation functions here to spin the virtual objects
+
+                // Final transformations
+                drawBuffer.forEach { _, value ->
+                    value.quaternionRotate(intArrayOf(1, 0, 0), 45.0)
+                    value.quaternionRotate(intArrayOf(0, 1, 0), 20.0)
+                    value.translate(
+                        (viewWidth - roomSize) / 2.0,
+                        (viewHeight - roomSize) / 2.0,
+                        0.0
+                    )
+                }
+
                 this@MyView.invalidate() // Update the view
             }
         }
@@ -33,9 +69,17 @@ class MyView(context: Context?) : View(context, null) {
     private val timer by lazy { Timer() }
 
     // Screen dimension
-    private val viewHeight: Int = resources.displayMetrics.heightPixels - 70
+    private val viewHeight: Int by lazy { resources.displayMetrics.heightPixels - 70 }
 
-    private val viewWidth: Int = resources.displayMetrics.widthPixels
+    private val viewWidth: Int by lazy { resources.displayMetrics.widthPixels }
+
+    private val drawBuffer = SparseArray<Object>().apply {
+        put(ROOM_INDEX, room)
+    }
+
+    private val objects = SparseArray<Object>().apply {
+        put(ROOM_INDEX, room)
+    }
 
     init {
         timer.scheduleAtFixedRate(task, 1000, 100)
@@ -45,10 +89,14 @@ class MyView(context: Context?) : View(context, null) {
         super.onDraw(canvas)
 
         // Add your drawing code here
-        canvas.drawRect(0f, 0f, 600f, 600f, redPaint)
+        drawBuffer.forEach { _, value ->
+            value.draw(canvas, path)
+        }
     }
 
     companion object {
+
+        private const val ROOM_INDEX = 0
 
         private val ECG_DATA = intArrayOf(
             1539,
