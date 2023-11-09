@@ -30,12 +30,12 @@ class MyView(context: Context?) : View(context, null) {
         Room(
             left = 0.0,
             top = 0.0,
-            right = roomSize.toDouble(),
-            bottom = roomSize.toDouble(),
+            right = roomSize,
+            bottom = roomSize,
             height = 250.0,
             doorWidth = 80.0,
-            floorColor = Color.RED,
-            wallColor = Color.BLUE,
+            floorColor = Color.BLACK,
+            wallColor = Color.RED,
             paintStyle = Paint.Style.STROKE
         )
     }
