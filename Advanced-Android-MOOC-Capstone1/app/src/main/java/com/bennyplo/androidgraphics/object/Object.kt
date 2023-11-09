@@ -11,27 +11,31 @@ interface Object {
     val components: Array<Pair<Int, Array<Coordinate>>>
 
     fun draw(canvas: Canvas, path: Path)
-
-    fun translate(
-        xTranslateAmount: Double,
-        yTranslateAmount: Double,
-        zTranslateAmount: Double
-    ) {
-        val matrix = getIdentityMatrix()
-
-        matrix[3] = xTranslateAmount
-        matrix[7] = yTranslateAmount
-        matrix[11] = zTranslateAmount
-
-        components.forEachIndexed { index, pair ->
-            components[index] = pair.first to transformation(pair.second, matrix)
-        }
-    }
-
     fun orderVertices(partVertices: Array<Array<Coordinate>>): Array<Array<Coordinate>> =
         partVertices.sortedByDescending {
             it.minOf { coordinate -> coordinate.z }
         }.toTypedArray()
+
+    fun orderVertices(partVertices: Array<Pair<Int, Array<Coordinate>>>): Array<Pair<Int, Array<Coordinate>>> =
+        partVertices.sortedBy {
+            it.second.minOf { coordinate -> coordinate.z }
+        }.toTypedArray()
+
+    fun quaternionRotate(
+        rotateAxis: IntArray,
+        rotateDegree: Double
+    ) {
+        components.forEach { pair ->
+            pair.second.let { coordinates ->
+                coordinates.forEachIndexed { index, coordinate ->
+                    coordinate.let {
+                        components[pair.first].second[index] =
+                            quaternionCalculate(it, rotateAxis, rotateDegree)
+                    }
+                }
+            }
+        }
+    }
 
     //***********************************************************
     // Quaternion rotation
@@ -49,22 +53,6 @@ interface Object {
         }
 
         return result
-    }
-
-    fun quaternionRotate(
-        rotateAxis: IntArray,
-        rotateDegree: Double
-    ) {
-        components.forEach { pair ->
-            pair.second.let { coordinates ->
-                coordinates.forEachIndexed { index, coordinate ->
-                    coordinate.let {
-                        components[pair.first].second[index] =
-                            quaternionCalculate(it, rotateAxis, rotateDegree)
-                    }
-                }
-            }
-        }
     }
 
     //***********************************************************
@@ -110,6 +98,23 @@ interface Object {
         return result
     }
 
+    // Affine transform a 3D object with vertices
+    fun transformation(
+        vertices: Array<Coordinate>,
+        matrix: DoubleArray
+    ): Array<Coordinate> {
+        // vertices - vertices of the 3D object.
+        // matrix - transformation matrix
+        val result = arrayOf(*vertices)
+
+        for (i in vertices.indices) {
+            result[i] = transformation(vertices[i], matrix)
+            result[i].normalise()
+        }
+
+        return result
+    }
+
     // Affine transformation with homogeneous coordinates
     // i.e. a vector (vertex) multiply with the transformation matrix
     fun transformation(
@@ -132,21 +137,36 @@ interface Object {
         return result
     }
 
-    // Affine transform a 3D object with vertices
-    fun transformation(
-        vertices: Array<Coordinate>,
-        matrix: DoubleArray
-    ): Array<Coordinate> {
-        // vertices - vertices of the 3D object.
-        // matrix - transformation matrix
-        val result = arrayOf(*vertices)
+    fun translate(
+        xTranslateAmount: Double,
+        yTranslateAmount: Double,
+        zTranslateAmount: Double
+    ) {
+        val matrix = getIdentityMatrix()
 
-        for (i in vertices.indices) {
-            result[i] = transformation(vertices[i], matrix)
-            result[i].normalise()
+        matrix[3] = xTranslateAmount
+        matrix[7] = yTranslateAmount
+        matrix[11] = zTranslateAmount
+
+        components.forEachIndexed { index, pair ->
+            components[index] = pair.first to transformation(pair.second, matrix)
         }
+    }
 
-        return result
+    fun scale(
+        xScaleFactor: Double,
+        yScaleFactor: Double,
+        zScaleFactor: Double
+    ) {
+        val matrix = getIdentityMatrix()
+
+        matrix[0] = xScaleFactor
+        matrix[5] = yScaleFactor
+        matrix[10] = zScaleFactor
+
+        components.forEachIndexed { index, pair ->
+            components[index] = pair.first to transformation(pair.second, matrix)
+        }
     }
 
     //***********************************************************

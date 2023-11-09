@@ -8,6 +8,7 @@ import android.graphics.Path
 import android.util.SparseArray
 import android.view.View
 import androidx.core.util.forEach
+import com.bennyplo.androidgraphics.`object`.ECG
 import com.bennyplo.androidgraphics.`object`.Object
 import com.bennyplo.androidgraphics.`object`.Room
 import java.util.Timer
@@ -26,17 +27,35 @@ class MyView(context: Context?) : View(context, null) {
         viewWidth - (viewWidth / 2.5)
     }
 
+    private val graphWidth by lazy {
+        viewWidth - (viewWidth / 4.0)
+    }
+
+    private val roomHeight by lazy {
+        250.0
+    }
+
     private val room by lazy {
         Room(
-            left = 0.0,
-            top = 0.0,
-            right = roomSize,
-            bottom = roomSize,
-            height = 250.0,
+            left = 0.0 - (roomSize / 2),
+            top = 0.0 - (roomSize / 2),
+            right = roomSize - (roomSize / 2),
+            bottom = roomSize - (roomSize / 2),
+            height = roomHeight,
             doorWidth = 80.0,
             floorColor = Color.BLACK,
             wallColor = Color.RED,
             paintStyle = Paint.Style.STROKE
+        )
+    }
+    private val ecg by lazy {
+        ECG(
+            left = 0.0 - (graphWidth / 2),
+            top = 0.0 - (1000 / 2),
+            right = graphWidth - (graphWidth / 2),
+            bottom = 1000 - (1000 / 2.0),
+            maxValue = 2400.0,
+            minValue = 1700.0
         )
     }
 
@@ -46,17 +65,24 @@ class MyView(context: Context?) : View(context, null) {
                 objects.forEach { key, value ->
                     when (value) {
                         is Room -> drawBuffer[key] = value.copy()
+                        is ECG -> drawBuffer[key] = value.copy().apply {
+                            scale(0.1, 0.2, 1.0)
+                            translate(0.0, roomHeight / 2, -roomSize / 2)
+                            quaternionRotate(intArrayOf(0, 0, 1), 180.0)
+                            quaternionRotate(intArrayOf(1, 0, 0), -90.0)
+                        }
                     }
                 }
                 // Add your rotation functions here to spin the virtual objects
 
                 // Final transformations
-                drawBuffer.forEach { _, value ->
+                drawBuffer.forEach { key, value ->
                     value.quaternionRotate(intArrayOf(1, 0, 0), 45.0)
                     value.quaternionRotate(intArrayOf(0, 1, 0), 20.0)
+
                     value.translate(
-                        (viewWidth - roomSize) / 2.0,
-                        (viewHeight - roomSize) / 2.0,
+                        viewWidth / 2.0,
+                        viewHeight / 2.0,
                         0.0
                     )
                 }
@@ -73,12 +99,11 @@ class MyView(context: Context?) : View(context, null) {
 
     private val viewWidth: Int by lazy { resources.displayMetrics.widthPixels }
 
-    private val drawBuffer = SparseArray<Object>().apply {
-        put(ROOM_INDEX, room)
-    }
+    private val drawBuffer = SparseArray<Object>()
 
     private val objects = SparseArray<Object>().apply {
         put(ROOM_INDEX, room)
+        put(ECG_INDEX, ecg)
     }
 
     init {
@@ -97,6 +122,7 @@ class MyView(context: Context?) : View(context, null) {
     companion object {
 
         private const val ROOM_INDEX = 0
+        private const val ECG_INDEX = 1
 
         private val ECG_DATA = intArrayOf(
             1539,

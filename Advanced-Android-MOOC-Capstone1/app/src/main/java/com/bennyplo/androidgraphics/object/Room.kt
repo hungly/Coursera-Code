@@ -16,16 +16,20 @@ data class Room(
     val wallColor: Int = 0,
 ) : Object {
 
-    private val floorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = floorColor
-        strokeWidth = 5F
-        style = paintStyle
+    private val floorPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = floorColor
+            strokeWidth = 5F
+            style = paintStyle
+        }
     }
 
-    private val wallPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = wallColor
-        strokeWidth = 5F
-        style = paintStyle
+    private val wallPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = wallColor
+            strokeWidth = 5F
+            style = paintStyle
+        }
     }
 
     override val components: Array<Pair<Int, Array<Coordinate>>>
@@ -177,7 +181,7 @@ data class Room(
                         else -> {
                             components.find { components ->
                                 components.first == FLOOR_INDEX
-                            }?.second?.let {floorCoordinates->
+                            }?.second?.let { floorCoordinates ->
                                 path.moveTo(coordinates[0].x.toFloat(), coordinates[0].y.toFloat())
                                 path.lineTo(coordinates[1].x.toFloat(), coordinates[1].y.toFloat())
                                 path.lineTo(coordinates[2].x.toFloat(), coordinates[2].y.toFloat())
@@ -388,11 +392,6 @@ data class Room(
             }
         }
     }
-
-    private fun orderVertices(partVertices: Array<Pair<Int, Array<Coordinate>>>): Array<Pair<Int, Array<Coordinate>>> =
-        partVertices.sortedBy {
-            it.second.minOf { coordinate -> coordinate.z }
-        }.toTypedArray()
 
     companion object {
         private const val FLOOR_INDEX = 0
