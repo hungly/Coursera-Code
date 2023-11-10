@@ -24,7 +24,7 @@ class MyView(context: Context?) : View(context, null) {
     }
 
     private val roomSize by lazy {
-        viewWidth - (viewWidth / 2.5)
+        viewWidth - (viewWidth / 2.0)
     }
 
     private val graphWidth by lazy {
@@ -34,6 +34,8 @@ class MyView(context: Context?) : View(context, null) {
     private val roomHeight by lazy {
         250.0
     }
+
+    private var angle = 0.0
 
     private val room by lazy {
         Room(
@@ -68,8 +70,8 @@ class MyView(context: Context?) : View(context, null) {
                         is ECG -> drawBuffer[key] = value.copy().apply {
                             scale(0.1, 0.2, 1.0)
                             translate(0.0, roomHeight / 2, -roomSize / 2)
-                            quaternionRotate(intArrayOf(0, 0, 1), 180.0)
-                            quaternionRotate(intArrayOf(1, 0, 0), -90.0)
+                            quaternionRotate(doubleArrayOf(0.0, 0.0, 1.0), 180.0)
+                            quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), -90.0)
                         }
                     }
                 }
@@ -77,14 +79,19 @@ class MyView(context: Context?) : View(context, null) {
 
                 // Final transformations
                 drawBuffer.forEach { key, value ->
-                    value.quaternionRotate(intArrayOf(1, 0, 0), 45.0)
-                    value.quaternionRotate(intArrayOf(0, 1, 0), 20.0)
+                    value.quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), 45.0)
+                    value.quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 20.0)
+
+//                    value.quaternionRotate(doubleArrayOf(0.8, 0.5, 0.7), angle)
 
                     value.translate(
                         viewWidth / 2.0,
                         viewHeight / 2.0,
                         0.0
                     )
+
+                    angle += 1
+                    angle %= 360
                 }
 
                 this@MyView.invalidate() // Update the view

@@ -22,7 +22,7 @@ interface Object {
         }.toTypedArray()
 
     fun quaternionRotate(
-        rotateAxis: IntArray,
+        rotateAxis: DoubleArray,
         rotateDegree: Double
     ) {
         components.forEach { pair ->
@@ -41,7 +41,7 @@ interface Object {
     // Quaternion rotation
     fun quaternionRotate(
         vertices: Array<Coordinate>,
-        rotateAxis: IntArray,
+        rotateAxis: DoubleArray,
         rotateDegree: Double
     ): Array<Coordinate> {
         val result = arrayOf(*vertices)
@@ -197,7 +197,7 @@ interface Object {
 
     private fun quaternionCalculate(
         vertex: Coordinate,
-        rotateAxis: IntArray,
+        rotateAxis: DoubleArray,
         rotateDegree: Double
     ): Coordinate {
         val (cos, sin) = (Math.toRadians(rotateDegree) / 2).let {
