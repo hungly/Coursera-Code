@@ -10,6 +10,7 @@ import android.view.View
 import androidx.core.util.forEach
 import com.bennyplo.androidgraphics.`object`.ECG
 import com.bennyplo.androidgraphics.`object`.Object
+import com.bennyplo.androidgraphics.`object`.Picture
 import com.bennyplo.androidgraphics.`object`.Room
 import java.util.Timer
 import java.util.TimerTask
@@ -35,6 +36,14 @@ class MyView(context: Context?) : View(context, null) {
         250.0
     }
 
+    private val picHeight by lazy {
+        roomHeight - (roomHeight / 1.5)
+    }
+
+    private val picWidth by lazy {
+        (roomSize / 20)
+    }
+
     private var angle = 0.0
 
     private val room by lazy {
@@ -44,7 +53,7 @@ class MyView(context: Context?) : View(context, null) {
             right = roomSize - (roomSize / 2),
             bottom = roomSize - (roomSize / 2),
             height = roomHeight,
-            doorWidth = 80.0,
+            doorWidth = 50.0,
             floorColor = Color.BLACK,
             wallColor = Color.RED,
             paintStyle = Paint.Style.STROKE
@@ -66,10 +75,178 @@ class MyView(context: Context?) : View(context, null) {
             override fun run() {
                 objects.forEach { key, value ->
                     when (value) {
-                        is Room -> drawBuffer[key] = value.copy()
-                        is ECG -> drawBuffer[key] = value.copy().apply {
+                        is Room -> buffer[key] = value.copy()
+                        is ECG -> buffer[key] = value.copy().apply {
                             scale(0.1, 0.2, 1.0)
                             translate(0.0, roomHeight / 2, -roomSize / 2)
+                            quaternionRotate(doubleArrayOf(0.0, 0.0, 1.0), 180.0)
+                            quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), -90.0)
+                        }
+
+                        is Picture -> buffer[key] = value.copy(
+                            pattern = value.pattern,
+                            bgColor = value.bgColor,
+                            patternColor = value.patternColor
+                        ).apply {
+                            when (key) {
+                                PIC_1 -> {
+                                    translate(
+                                        (roomSize / 3),
+                                        roomHeight / 2,
+                                        -roomSize / 2
+                                    )
+                                }
+                                PIC_2 -> {
+                                    translate(
+                                        -(roomSize / 3),
+                                        roomHeight / 2,
+                                        -roomSize / 2
+                                    )
+                                }
+                                PIC_3 -> {
+                                    translate(
+                                        (roomSize / 3),
+                                        roomHeight / 2,
+                                        -roomSize / 2 + roomSize / 3
+                                    )
+                                }
+                                PIC_4 -> {
+                                    translate(
+                                        -(roomSize / 3),
+                                        roomHeight / 2,
+                                        -roomSize / 2 + roomSize / 3
+                                    )
+                                }
+                                PIC_5 -> {
+                                    translate(
+                                        (roomSize / 3),
+                                        roomHeight / 2,
+                                        roomSize / 2 - roomSize / 3
+                                    )
+                                }
+                                PIC_6 -> {
+                                    translate(
+                                        -(roomSize / 3),
+                                        roomHeight / 2,
+                                        roomSize / 2 - roomSize / 3
+                                    )
+                                }
+                                PIC_7 -> {
+                                    translate(
+                                        (roomSize / 3),
+                                        roomHeight / 2,
+                                        roomSize / 2
+                                    )
+                                }
+                                PIC_8 -> {
+                                    translate(
+                                        -(roomSize / 3),
+                                        roomHeight / 2,
+                                        roomSize / 2
+                                    )
+                                }
+                                PIC_9 -> {
+                                    translate(0.0, roomHeight / 2, roomSize / 2)
+                                }
+                                PIC_10 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2),
+                                        roomHeight / 2,
+                                        -(roomSize / 3)
+                                    )
+                                }
+                                PIC_11 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2) - (roomSize / 3),
+                                        roomHeight / 2,
+                                        -(roomSize / 3)
+                                    )
+                                }
+                                PIC_12 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2) + (roomSize / 3),
+                                        roomHeight / 2,
+                                        -(roomSize / 3)
+                                    )
+                                }
+                                PIC_13 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2),
+                                        roomHeight / 2,
+                                        -(roomSize / 3)
+                                    )
+                                }
+
+                                PIC_14 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2),
+                                        roomHeight / 2,
+                                        0.0
+                                    )
+                                }
+                                PIC_15 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2) - (roomSize / 3),
+                                        roomHeight / 2,
+                                        0.0
+                                    )
+                                }
+                                PIC_16 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2) + (roomSize / 3),
+                                        roomHeight / 2,
+                                        0.0
+                                    )
+                                }
+                                PIC_17 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2),
+                                        roomHeight / 2,
+                                        0.0
+                                    )
+                                }
+
+                                PIC_18 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2),
+                                        roomHeight / 2,
+                                        (roomSize / 3)
+                                    )
+                                }
+                                PIC_19 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        (roomSize / 2) - (roomSize / 3),
+                                        roomHeight / 2,
+                                        (roomSize / 3)
+                                    )
+                                }
+                                PIC_20 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2) + (roomSize / 3),
+                                        roomHeight / 2,
+                                        (roomSize / 3)
+                                    )
+                                }
+                                PIC_21 -> {
+                                    quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 90.0)
+                                    translate(
+                                        -(roomSize / 2),
+                                        roomHeight / 2,
+                                        (roomSize / 3)
+                                    )
+                                }
+                            }
                             quaternionRotate(doubleArrayOf(0.0, 0.0, 1.0), 180.0)
                             quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), -90.0)
                         }
@@ -78,11 +255,13 @@ class MyView(context: Context?) : View(context, null) {
                 // Add your rotation functions here to spin the virtual objects
 
                 // Final transformations
-                drawBuffer.forEach { key, value ->
-                    value.quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), 45.0)
-                    value.quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 20.0)
+                buffer.forEach { key, value ->
+//                    value.quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), 45.0)
+//                    value.quaternionRotate(doubleArrayOf(0.0, 1.0, 0.0), 20.0)
 
-//                    value.quaternionRotate(doubleArrayOf(0.8, 0.5, 0.7), angle)
+//                    value.quaternionRotate(doubleArrayOf(1.0, 0.0, 0.0), 90.0)
+
+                    value.quaternionRotate(doubleArrayOf(0.8, 0.5, 0.7), angle)
 
                     value.translate(
                         viewWidth / 2.0,
@@ -90,8 +269,12 @@ class MyView(context: Context?) : View(context, null) {
                         0.0
                     )
 
-                    angle += 1
+                    angle += 0.1
                     angle %= 360
+                }
+
+                buffer.forEach { key, value ->
+                    drawBuffer[key] = value
                 }
 
                 this@MyView.invalidate() // Update the view
@@ -107,10 +290,284 @@ class MyView(context: Context?) : View(context, null) {
     private val viewWidth: Int by lazy { resources.displayMetrics.widthPixels }
 
     private val drawBuffer = SparseArray<Object>()
+    private val buffer = SparseArray<Object>()
 
     private val objects = SparseArray<Object>().apply {
         put(ROOM_INDEX, room)
         put(ECG_INDEX, ecg)
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_1, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_2, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_3, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_4, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_5, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_6, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_7, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_8, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_9, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_10, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_11, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_12, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_13, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_14, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_15, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_16, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_17, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_18, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_19, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_20, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
+        Picture.getColor().let { bgColor ->
+            put(
+                PIC_21, Picture(
+                    left = 0.0 - picWidth,
+                    top = 0.0 - picHeight,
+                    right = picWidth,
+                    bottom = roomHeight - picHeight * 2,
+                    pattern = Picture.getPattern(),
+                    bgColor = bgColor,
+                    patternColor = Picture.getColor(bgColor)
+                )
+            )
+        }
     }
 
     init {
@@ -130,131 +587,27 @@ class MyView(context: Context?) : View(context, null) {
 
         private const val ROOM_INDEX = 0
         private const val ECG_INDEX = 1
-
-        private val ECG_DATA = intArrayOf(
-            1539,
-            1531,
-            1547,
-            1539,
-            1543,
-            1531,
-            1575,
-            1591,
-            1543,
-            1539,
-            1523,
-            1539,
-            1543,
-            1539,
-            1859,
-            2587,
-            1455,
-            1539,
-            1523,
-            1527,
-            1543,
-            1587,
-            1619,
-            1635,
-            1655,
-            1659,
-            1639,
-            1639,
-            1579,
-            1547,
-            1527,
-            1527,
-            1547,
-            1543,
-            1551,
-            1547,
-            1547,
-            1563,
-            1539,
-            1527,
-            1523,
-            1543,
-            1539,
-            1575,
-            1599,
-            1555,
-            1531,
-            1539,
-            1551,
-            1547,
-            1487,
-            1995,
-            2331,
-            1563,
-            1539,
-            1523,
-            1563,
-            1559,
-            1591,
-            1615,
-            1635,
-            1659,
-            1651,
-            1675,
-            1631,
-            1567,
-            1531,
-            1519,
-            1527,
-            1511,
-            1531,
-            1527,
-            1539,
-            1539,
-            1527,
-            1539,
-            1543,
-            1547,
-            1547,
-            1571,
-            1603,
-            1571,
-            1539,
-            1551,
-            1547,
-            1559,
-            1487,
-            1927,
-            2475,
-            1491,
-            1531,
-            1503,
-            1551,
-            1559,
-            1571,
-            1599,
-            1623,
-            1663,
-            1659,
-            1659,
-            1615,
-            1547,
-            1519,
-            1519,
-            1511,
-            1523,
-            1539,
-            1543,
-            1551,
-            1567,
-            1563,
-            1551,
-            1555,
-            1547,
-            1587,
-            1579,
-            1567,
-            1559,
-            1539,
-            1559,
-            1555,
-            1563
-        )
+        private const val PIC_1 = 2
+        private const val PIC_2 = 3
+        private const val PIC_3 = 4
+        private const val PIC_4 = 5
+        private const val PIC_5 = 6
+        private const val PIC_6 = 7
+        private const val PIC_7 = 8
+        private const val PIC_8 = 9
+        private const val PIC_9 = 10
+        private const val PIC_10 = 11
+        private const val PIC_11 = 12
+        private const val PIC_12 = 13
+        private const val PIC_13 = 14
+        private const val PIC_14 = 15
+        private const val PIC_15 = 16
+        private const val PIC_16 = 17
+        private const val PIC_17 = 18
+        private const val PIC_18= 19
+        private const val PIC_19= 20
+        private const val PIC_20= 21
+        private const val PIC_21= 22
     }
 
 }
