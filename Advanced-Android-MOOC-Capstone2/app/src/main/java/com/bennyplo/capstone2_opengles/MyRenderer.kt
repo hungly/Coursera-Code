@@ -3,7 +3,6 @@ package com.bennyplo.capstone2_opengles
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
-import android.util.Log
 import com.bennyplo.capstone2_opengles.gl_object.Constant
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
@@ -108,7 +107,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         fun checkGlError(glOperation: String) {
             var error: Int
             if (GLES32.glGetError().also { error = it } != GLES32.GL_NO_ERROR) {
-                Log.e("MyRenderer", "$glOperation: glError $error")
+                Timber.tag("MyRenderer").e("$glOperation: glError $error")
             }
         }
 

@@ -8,9 +8,52 @@ import java.nio.IntBuffer
 
 class FloorPlan {
 
+    private val colorBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(floorColors.size * COLORS_PER_VERTEX).apply {
+            order(ByteOrder.nativeOrder())
+        }.asFloatBuffer().apply {
+            put(floorColors)
+            position(0)
+        }
+    }
+
+    private val colorStride by lazy {
+        COLORS_PER_VERTEX * Float.SIZE_BYTES
+    }
+
+    private val floorColors by lazy {
+        val numberOfVertices = FLOOR_PLAN_VERTICES.size / COORDS_PER_VERTEX
+        val colors = FloatArray(numberOfVertices * COLORS_PER_VERTEX)
+        (0 until numberOfVertices).forEach {
+            when {
+                (it in 0..7) || (it in 28..35) -> {
+                    colors[it * COLORS_PER_VERTEX] = 0.5F
+                    colors[it * COLORS_PER_VERTEX + 1] = 0.5F
+                    colors[it * COLORS_PER_VERTEX + 2] = 0.5F
+                    colors[it * COLORS_PER_VERTEX + 3] = 1.0F
+                }
+
+                it >= numberOfVertices - 4 -> {
+                    colors[it * COLORS_PER_VERTEX] = 0.25F
+                    colors[it * COLORS_PER_VERTEX + 1] = 0.25F
+                    colors[it * COLORS_PER_VERTEX + 2] = 0.25F
+                    colors[it * COLORS_PER_VERTEX + 3] = 1.0F
+                }
+
+                else -> {
+                    colors[it * COLORS_PER_VERTEX] = 0.75F
+                    colors[it * COLORS_PER_VERTEX + 1] = 0.75F
+                    colors[it * COLORS_PER_VERTEX + 2] = 0.75F
+                    colors[it * COLORS_PER_VERTEX + 3] = 1.0F
+                }
+            }
+        }
+        colors
+    }
+
     private val indexBuffer: IntBuffer by lazy {
-        IntBuffer.allocate(CUBE_INDEXES.size).apply {
-            put(CUBE_INDEXES)
+        IntBuffer.allocate(FLOOR_INDEXES.size).apply {
+            put(FLOOR_INDEXES)
             position(0)
         }
     }
@@ -34,6 +77,12 @@ class FloorPlan {
         FLOOR_PLAN_VERTICES.size / COORDS_PER_VERTEX
     }
 
+    private val vertexStride by lazy {
+        COORDS_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
+    }
+
+    private val colorHandle: Int
+
     private val fragmentShaderCode =
         "precision mediump float;" +
                 "varying vec4 vColor;" +
@@ -48,13 +97,12 @@ class FloorPlan {
         "attribute vec3 aVertexPosition;" +
                 "uniform mat4 uMVPMatrix;" +
                 "varying vec4 vColor;" +
+                "attribute vec4 aVertexColor;" +//attribute variable for vertex colors
                 "void main() {" +
                 "   gl_Position = uMVPMatrix *vec4(aVertexPosition, 1.0);" +
                 "   gl_PointSize = 40.0;" +
-                "   vColor = vec4(1.0, 0.0, 0.0, 1.0);" +
+                "   vColor = aVertexColor;" +
                 "}"
-
-    private val vertexStride = COORDS_PER_VERTEX * 4 // 4 bytes per vertex
 
     init {
         // Initialize vertex byte buffer for shape coordinates
@@ -79,10 +127,23 @@ class FloorPlan {
             MyRenderer.loadShader(GLES32.GL_FRAGMENT_SHADER, fragmentShaderCode)
         ) // Add the fragment shader to program
         GLES32.glLinkProgram(program) // Link the  OpenGL program to create an executable
+
         // Get handle to vertex shader's vPosition member
         positionHandle = GLES32.glGetAttribLocation(program, "aVertexPosition")
         // Enable a handle to the triangle vertices
         GLES32.glEnableVertexAttribArray(positionHandle)
+
+        colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
+        GLES32.glEnableVertexAttribArray(colorHandle)
+        GLES32.glVertexAttribPointer(
+            colorHandle,
+            COLORS_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            colorStride,
+            colorBuffer
+        )
+
         // Get handle to shape's transformation matrix
         mVPMatrixHandle = GLES32.glGetUniformLocation(program, "uMVPMatrix")
         MyRenderer.checkGlError("glGetUniformLocation")
@@ -107,7 +168,7 @@ class FloorPlan {
 //        GLES32.glDrawArrays(GLES32.GL_LINES, 0, vertexCount)
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
-            CUBE_INDEXES.size,
+            FLOOR_INDEXES.size,
             GLES32.GL_UNSIGNED_INT,
             indexBuffer
         )
@@ -116,8 +177,9 @@ class FloorPlan {
     companion object {
         // Number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
+        private const val COLORS_PER_VERTEX = 4
 
-        private val CUBE_INDEXES = intArrayOf(
+        private val FLOOR_INDEXES = intArrayOf(
             0, 1, 28, 1, 29, 28,
             2, 3, 30, 3, 31, 30,
             4, 5, 32, 5, 33, 32,
@@ -131,7 +193,8 @@ class FloorPlan {
             20, 21, 48, 21, 49, 48,
             22, 23, 50, 23, 51, 50,
             24, 25, 52, 25, 53, 52,
-            26, 27, 54, 27, 55, 54
+            26, 27, 54, 27, 55, 54,
+            56, 57, 58, 56, 58, 59
         )
 
         private val FLOOR_PLAN_VERTICES = floatArrayOf(
@@ -209,6 +272,11 @@ class FloorPlan {
             1.0F, -0.5F, 1.0F, // 53
             1.0F, -1.5F, 1.0F, // 54
             1.0F, -3.0F, 1.0F, // 55
+            // Floor
+            -3.0F, -3.0F, -1.0F, // 56
+            -3.0F, 3.0F, -1.0F, // 57
+            3.0F, 3.0F, -1.0F, // 58
+            3.0F, -3.0F, -1.0F, // 59
         )
     }
 
