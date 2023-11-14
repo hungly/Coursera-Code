@@ -104,14 +104,42 @@ class FloorPlan {
         private const val COORDS_PER_VERTEX = 3
 
         private val FLOOR_PLAN_VERTICES = floatArrayOf(
+            // Left
             -3.0F, -3.0F, 0.0F,
             -3.0F, 3.0F, 0.0F,
+            // Top
             -3.0F, 3.0F, 0.0F,
             3.0F, 3.0F, 0.0F,
+            // Right
             -3.0F, -3.0F, 0.0F,
             3.0F, -3.0F, 0.0F,
+            // Bottom
             3.0F, -3.0F, 0.0F,
-            3.0F, 3.0F, 0.0F
+            3.0F, 3.0F, 0.0F,
+            // Inner - Horizontal - Left
+            -3.0F, -1.0F, 0.0F,
+            -1.0F, -1.0F, 0.0F,
+            -3.0F, 1.0F, 0.0F,
+            -1.0F, 1.0F, 0.0F,
+            // Inner - Horizontal - Right
+            3.0F, 1.0F, 0.0F,
+            1.0F, 1.0F, 0.0F,
+            3.0F, -1.0F, 0.0F,
+            1.0F, -1.0F, 0.0F,
+            // Inner - Vertical - Left
+            -1.0F, -3.0F, 0.0F,
+            -1.0F, -1.5F, 0.0F,
+            -1.0F, -0.5F, 0.0F,
+            -1.0F, 0.5F, 0.0F,
+            -1.0F, 1.5F, 0.0F,
+            -1.0F, 3.0F, 0.0F,
+            // Inner - Vertical - Right
+            1.0F, 3.0F, 0.0F,
+            1.0F, 1.5F, 0.0F,
+            1.0F, 0.5F, 0.0F,
+            1.0F, -0.5F, 0.0F,
+            1.0F, -1.5F, 0.0F,
+            1.0F, -3.0F, 0.0F,
         )
     }
 
