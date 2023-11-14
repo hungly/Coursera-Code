@@ -5,14 +5,15 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
 import com.bennyplo.capstone2_opengles.gl_object.Constant
+import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MyRenderer : GLSurfaceView.Renderer {
 
-    private var mXAngle = 0.0F
-    private var mYAngle = 0.0F
-    private var mZAngle = 0.0F
+    private var mAngleX = 0.0F
+    private var mAngleY = 0.0F
+    private var mAngleZ = 0.0F
 
     private val mFloorPlan by lazy {
         FloorPlan()
@@ -53,9 +54,9 @@ class MyRenderer : GLSurfaceView.Renderer {
             0.0F
         ) // Head is down (set to (0,1,0) to look from the top)
         Matrix.translateM(modelMatrix, 0, 0.0F, 0.0F, -5.0f) // Move backward for 5 units
-        Matrix.setRotateM(yRotationMatrix, 0, mYAngle, 0.0F, 1.0F, 0.0F) // Rotate around the y-axis
-        Matrix.setRotateM(xRotationMatrix, 0, mXAngle, 1.0F, 0.0F, 0.0F) // Rotate around the x-axis
-        Matrix.setRotateM(zRotationMatrix, 0, mZAngle, 0.0F, 0.0F, 1.0F) // Rotate around the z-axis
+        Matrix.setRotateM(xRotationMatrix, 0, mAngleX, 1.0F, 0.0F, 0.0F) // Rotate around the x-axis
+        Matrix.setRotateM(yRotationMatrix, 0, mAngleY, 0.0F, 1.0F, 0.0F) // Rotate around the y-axis
+        Matrix.setRotateM(zRotationMatrix, 0, mAngleZ, 0.0F, 0.0F, 1.0F) // Rotate around the z-axis
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, yRotationMatrix, 0)
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, xRotationMatrix, 0)
         Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, zRotationMatrix, 0)
@@ -72,7 +73,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 0.5F, 8.0F)
+        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 0.5F, 16.0F)
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
@@ -80,16 +81,26 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glClearColor(0.0F, 0.0F, 0.0F, 1.0F)
     }
 
-    fun setXAngle(angle: Float) {
-        mXAngle = angle
+    fun getAngleX(): Float {
+        return mAngleX
     }
 
-    fun setYAngle(angle: Float) {
-        mYAngle = angle
+    fun getAngleY(): Float {
+        return mAngleY
     }
 
-    fun setZAngle(angle: Float) {
-        mZAngle = angle
+    fun setAngleX(angle: Float) {
+        mAngleX = angle
+        Timber.d("setAngleX: $mAngleX")
+    }
+
+    fun setAngleY(angle: Float) {
+        mAngleY = angle
+        Timber.d("setAngleY: $mAngleX")
+    }
+
+    fun setAngleZ(angle: Float) {
+        mAngleZ = angle
     }
 
     companion object {
