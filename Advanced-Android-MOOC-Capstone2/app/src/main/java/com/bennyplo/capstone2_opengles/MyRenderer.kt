@@ -4,6 +4,8 @@ import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import com.bennyplo.capstone2_opengles.gl_object.Constant
+import com.bennyplo.capstone2_opengles.gl_object.ECG
+import com.bennyplo.capstone2_opengles.gl_object.FloorPlan
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -14,8 +16,23 @@ class MyRenderer : GLSurfaceView.Renderer {
     private var mAngleY = 0.0F
     private var mAngleZ = 0.0F
 
-    private val mFloorPlan by lazy {
+    private val floorPlan by lazy {
         FloorPlan()
+    }
+
+    private val ecg by lazy {
+        ECG().apply {
+            initialScale = Triple(1.0F / 5, 1.0F / 5, 1.0F)
+            initialRotation = Triple(90.0F, 0.0F, 0.0F)
+            initialTranslation = Triple(0.0F, 0.0F, -3.0F + 0.008F)
+        }
+    }
+
+    private val glObjects by lazy {
+        arrayOf(
+            floorPlan,
+            ecg
+        )
     }
 
     private val mVMatrix = FloatArray(Constant.MATRIX_SIZE) // Model view matrix
@@ -34,37 +51,67 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glClearDepthf(1.0F) // Set up the depth buffer
         GLES32.glEnable(GLES32.GL_DEPTH_TEST) // Enable depth test (so, it will not look through the surfaces)
         GLES32.glDepthFunc(GLES32.GL_LEQUAL) // Indicate what type of depth test
-        // Set the model view projection matrix to an identity matrix
-        Matrix.setIdentityM(mVPMatrix, 0)
-        Matrix.setIdentityM(mVMatrix, 0) // Set the model view  matrix to an identity matrix
-        Matrix.setIdentityM(modelMatrix, 0) // Set the model matrix to an identity matrix
-        // Set the camera position (View matrix)
-        Matrix.setLookAtM(
-            viewMatrix,
-            0,
-            0.0F,
-            0.0F,
-            1.0F,  // Camera is at (0,0,1)
-            0.0F,
-            0.0F,
-            0.0F,  // Looks at the origin
-            0.0F,
-            1.0F,
-            0.0F
-        ) // Head is down (set to (0,1,0) to look from the top)
-        Matrix.translateM(modelMatrix, 0, 0.0F, 0.0F, -5.0f) // Move backward for 5 units
-        Matrix.setRotateM(xRotationMatrix, 0, mAngleX, 1.0F, 0.0F, 0.0F) // Rotate around the x-axis
-        Matrix.setRotateM(yRotationMatrix, 0, mAngleY, 0.0F, 1.0F, 0.0F) // Rotate around the y-axis
-        Matrix.setRotateM(zRotationMatrix, 0, mAngleZ, 0.0F, 0.0F, 1.0F) // Rotate around the z-axis
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, yRotationMatrix, 0)
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, xRotationMatrix, 0)
-        Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, zRotationMatrix, 0)
 
-        // Calculate the projection and view transformation
-        // Calculate the model view matrix
-        Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
-        Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
-        mFloorPlan.draw(mVPMatrix)
+        glObjects.forEach {
+            // Set the model view projection matrix to an identity matrix
+            Matrix.setIdentityM(mVPMatrix, 0)
+            Matrix.setIdentityM(mVMatrix, 0) // Set the model view  matrix to an identity matrix
+            Matrix.setIdentityM(modelMatrix, 0) // Set the model matrix to an identity matrix
+            // Set the camera position (View matrix)
+            Matrix.setLookAtM(
+                viewMatrix,
+                0,
+                0.0F,
+                0.0F,
+                1.0F,  // Camera is at (0,0,1)
+                0.0F,
+                0.0F,
+                0.0F,  // Looks at the origin
+                0.0F,
+                1.0F,
+                0.0F
+            ) // Head is down (set to (0,1,0) to look from the top)
+
+            Matrix.translateM(modelMatrix, 0, 0.0F, 0.0F, -5.0f) // Move backward for 5 units
+            Matrix.setRotateM(
+                xRotationMatrix,
+                0,
+                mAngleX + it.initialRotation.first,
+                1.0F,
+                0.0F,
+                0.0F
+            ) // Rotate around the x-axis
+            Matrix.setRotateM(
+                yRotationMatrix,
+                0,
+                mAngleY + it.initialRotation.second,
+                0.0F,
+                1.0F,
+                0.0F
+            ) // Rotate around the y-axis
+            Matrix.setRotateM(
+                zRotationMatrix,
+                0,
+                mAngleZ + it.initialRotation.third,
+                0.0F,
+                0.0F,
+                1.0F
+            ) // Rotate around the z-axis
+            Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, yRotationMatrix, 0)
+            Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, xRotationMatrix, 0)
+            Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, zRotationMatrix, 0)
+
+            Matrix.translateM(modelMatrix, 0, it.initialTranslation.first, it.initialTranslation.second, it.initialTranslation.third)
+
+            // Calculate the projection and view transformation
+            // Calculate the model view matrix
+            Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+            Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
+
+            it.draw(mVPMatrix)
+        }
+//        floorPlan.draw(mVPMatrix)
+//        ecg.draw(mVPMatrix)
     }
 
     override fun onSurfaceChanged(unused: GL10, width: Int, height: Int) {

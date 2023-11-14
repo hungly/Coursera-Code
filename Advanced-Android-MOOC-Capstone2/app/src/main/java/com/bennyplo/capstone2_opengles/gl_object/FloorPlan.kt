@@ -1,12 +1,13 @@
-package com.bennyplo.capstone2_opengles
+package com.bennyplo.capstone2_opengles.gl_object
 
 import android.opengl.GLES32
+import com.bennyplo.capstone2_opengles.MyRenderer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class FloorPlan {
+class FloorPlan : GLObject() {
 
     private val colorBuffer: FloatBuffer by lazy {
         ByteBuffer.allocateDirect(floorColors.size * COLORS_PER_VERTEX).apply {
@@ -135,6 +136,18 @@ class FloorPlan {
 
         colorHandle = GLES32.glGetAttribLocation(program, "aVertexColor")
         GLES32.glEnableVertexAttribArray(colorHandle)
+
+        // Get handle to shape's transformation matrix
+        mVPMatrixHandle = GLES32.glGetUniformLocation(program, "uMVPMatrix")
+        MyRenderer.checkGlError("glGetUniformLocation")
+    }
+
+    override fun draw(mvpMatrix: FloatArray?) {
+        GLES32.glUseProgram(program) // Add program to OpenGL environment
+        // Apply the projection and view transformation
+        GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
+        MyRenderer.checkGlError("glUniformMatrix4fv")
+        // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             colorHandle,
             COLORS_PER_VERTEX,
@@ -143,18 +156,6 @@ class FloorPlan {
             colorStride,
             colorBuffer
         )
-
-        // Get handle to shape's transformation matrix
-        mVPMatrixHandle = GLES32.glGetUniformLocation(program, "uMVPMatrix")
-        MyRenderer.checkGlError("glGetUniformLocation")
-    }
-
-    fun draw(mvpMatrix: FloatArray?) {
-        GLES32.glUseProgram(program) // Add program to OpenGL environment
-        // Apply the projection and view transformation
-        GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
-        MyRenderer.checkGlError("glUniformMatrix4fv")
-        // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             positionHandle,
             COORDS_PER_VERTEX,
