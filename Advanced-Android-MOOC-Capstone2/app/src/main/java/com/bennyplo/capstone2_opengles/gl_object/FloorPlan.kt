@@ -147,6 +147,9 @@ class FloorPlan : GLObject() {
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         MyRenderer.checkGlError("glUniformMatrix4fv")
+
+        GLES32.glDisable(GLES32.GL_CULL_FACE)
+
         // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             colorHandle,

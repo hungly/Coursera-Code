@@ -53,10 +53,10 @@ class MyView(context: Context?) : GLSurfaceView(context) {
         val y = event?.y ?: 0F
         when (event?.action) {
             MotionEvent.ACTION_MOVE -> {
-                var dX = x - mPreviousX
-                var dY = y - mPreviousY
-                if (y > (height / 2)) dX *= -1
-                if (x < (width / 2)) dY *= -1
+                val dX = x - mPreviousX
+                val dY = y - mPreviousY
+//                if (y > (height / 2)) dX *= -1
+//                if (x < (width / 2)) dY *= -1
                 _renderer.setAngleY(_renderer.getAngleY() + (dX * TOUCH_SCALE_FACTOR))
                 _renderer.setAngleX(_renderer.getAngleX() + (dY * TOUCH_SCALE_FACTOR))
                 requestRender()

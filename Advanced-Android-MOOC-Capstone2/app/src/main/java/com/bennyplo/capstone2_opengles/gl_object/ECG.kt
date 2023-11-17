@@ -60,9 +60,9 @@ class ECG : GLObject() {
     private val graphColor by lazy {
         val colors = FloatArray(graphVertices.size / COORDS_PER_VERTEX * COLORS_PER_VERTEX)
         (0 until graphVertices.size / COORDS_PER_VERTEX).forEach {
-            colors[it * COLORS_PER_VERTEX] = 0.0F
+            colors[it * COLORS_PER_VERTEX] = 1.0F
             colors[it * COLORS_PER_VERTEX + 1] = 0.0F
-            colors[it * COLORS_PER_VERTEX + 2] = 1.0F
+            colors[it * COLORS_PER_VERTEX + 2] = 0.0F
             colors[it * COLORS_PER_VERTEX + 3] = 1.0F
         }
         colors
@@ -199,6 +199,11 @@ class ECG : GLObject() {
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         MyRenderer.checkGlError("glUniformMatrix4fv")
+
+        GLES32.glEnable(GLES32.GL_CULL_FACE)
+        GLES32.glCullFace(GLES32.GL_FRONT)
+        GLES32.glFrontFace(GLES32.GL_CCW)
+
         // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
             positionHandle,

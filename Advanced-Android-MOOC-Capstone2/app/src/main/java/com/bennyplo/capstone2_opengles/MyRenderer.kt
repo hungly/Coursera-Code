@@ -4,8 +4,10 @@ import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import com.bennyplo.capstone2_opengles.gl_object.Constant
+import com.bennyplo.capstone2_opengles.gl_object.Cube
 import com.bennyplo.capstone2_opengles.gl_object.ECG
 import com.bennyplo.capstone2_opengles.gl_object.FloorPlan
+import com.bennyplo.capstone2_opengles.gl_object.Vase
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -16,8 +18,11 @@ class MyRenderer : GLSurfaceView.Renderer {
     private var mAngleY = 0.0F
     private var mAngleZ = 0.0F
 
-    private val floorPlan by lazy {
-        FloorPlan()
+    private val cube by lazy {
+        Cube().apply {
+            initialScale = Triple(0.25F, 0.25F, 0.25F)
+            initialTranslation  = Triple(0.0F, 0.0F, -0.5F)
+        }
     }
 
     private val ecg by lazy {
@@ -28,11 +33,25 @@ class MyRenderer : GLSurfaceView.Renderer {
         }
     }
 
+    private val floorPlan by lazy {
+        FloorPlan()
+    }
+
     private val glObjects by lazy {
         arrayOf(
             floorPlan,
-            ecg
+            ecg,
+            cube,
+            vase
         )
+    }
+
+    private val vase by lazy {
+        Vase().apply {
+            initialScale = Triple(0.05F, 0.05F, 0.05F)
+            initialRotation = Triple(90.0F, 0.0F, 0.0F)
+            initialTranslation  = Triple(0.0F, -0.1F,0.0F )
+        }
     }
 
     private val mVMatrix = FloatArray(Constant.MATRIX_SIZE) // Model view matrix
@@ -101,7 +120,13 @@ class MyRenderer : GLSurfaceView.Renderer {
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, xRotationMatrix, 0)
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, zRotationMatrix, 0)
 
-            Matrix.translateM(modelMatrix, 0, it.initialTranslation.first, it.initialTranslation.second, it.initialTranslation.third)
+            Matrix.translateM(
+                modelMatrix,
+                0,
+                it.initialTranslation.first,
+                it.initialTranslation.second,
+                it.initialTranslation.third
+            )
 
             // Calculate the projection and view transformation
             // Calculate the model view matrix
@@ -119,7 +144,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 0.5F, 16.0F)
+        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 1.0F, 16.0F)
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
