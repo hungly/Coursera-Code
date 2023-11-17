@@ -200,6 +200,7 @@ class ECG : GLObject() {
         GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
         MyRenderer.checkGlError("glUniformMatrix4fv")
 
+        GLES32.glDisable(GLES32.GL_BLEND)
         GLES32.glEnable(GLES32.GL_CULL_FACE)
         GLES32.glCullFace(GLES32.GL_FRONT)
         GLES32.glFrontFace(GLES32.GL_CCW)

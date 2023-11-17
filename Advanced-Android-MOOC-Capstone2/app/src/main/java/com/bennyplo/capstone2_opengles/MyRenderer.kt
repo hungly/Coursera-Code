@@ -3,10 +3,12 @@ package com.bennyplo.capstone2_opengles
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
+import com.bennyplo.capstone2_opengles.gl_object.Base
 import com.bennyplo.capstone2_opengles.gl_object.Constant
 import com.bennyplo.capstone2_opengles.gl_object.Cube
 import com.bennyplo.capstone2_opengles.gl_object.ECG
 import com.bennyplo.capstone2_opengles.gl_object.FloorPlan
+import com.bennyplo.capstone2_opengles.gl_object.Pyramid
 import com.bennyplo.capstone2_opengles.gl_object.Vase
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
@@ -18,18 +20,26 @@ class MyRenderer : GLSurfaceView.Renderer {
     private var mAngleY = 0.0F
     private var mAngleZ = 0.0F
 
-    private val cube by lazy {
-        Cube().apply {
-            initialScale = Triple(0.25F, 0.25F, 0.25F)
-            initialTranslation  = Triple(0.0F, 0.0F, -0.5F)
-        }
-    }
-
     private val ecg by lazy {
         ECG().apply {
             initialScale = Triple(1.0F / 5, 1.0F / 5, 1.0F)
             initialRotation = Triple(90.0F, 0.0F, 0.0F)
             initialTranslation = Triple(0.0F, 0.0F, -3.0F + 0.008F)
+        }
+    }
+
+    private val cube by lazy {
+        Cube().apply {
+            initialScale = Triple(0.2F, 0.2F, 0.2F)
+            initialTranslation = Triple(-2.0F, -2.0F, 0.0F)
+        }
+    }
+
+    private val pyramid by lazy {
+        Pyramid().apply {
+            initialScale = Triple(0.2F, 0.2F, 0.2F)
+            initialRotation = Triple(90.0F, 0.0F, 0.0F)
+            initialTranslation = Triple(-2.0F, 0.0F, 2.0F)
         }
     }
 
@@ -41,8 +51,29 @@ class MyRenderer : GLSurfaceView.Renderer {
         arrayOf(
             floorPlan,
             ecg,
+            vase,
+            pyramid,
             cube,
-            vase
+            Base().apply {
+                initialScale = Triple(0.25F, 0.25F, 0.25F)
+                initialTranslation = Triple(0.0F, 0.0F, -0.5F)
+            },
+            Base().apply {
+                initialScale = Triple(0.25F, 0.25F, 0.25F)
+                initialTranslation = Triple(-2.0F, -2.0F, -0.5F)
+            },
+            Base().apply {
+                initialScale = Triple(0.25F, 0.25F, 0.25F)
+                initialTranslation = Triple(-2.0F, 2.0F, -0.5F)
+            },
+            Base().apply {
+                initialScale = Triple(0.25F, 0.25F, 0.25F)
+                initialTranslation = Triple(2.0F, 2.0F, -0.5F)
+            },
+            Base().apply {
+                initialScale = Triple(0.25F, 0.25F, 0.25F)
+                initialTranslation = Triple(2.0F, -2.0F, -0.5F)
+            }
         )
     }
 
@@ -50,7 +81,7 @@ class MyRenderer : GLSurfaceView.Renderer {
         Vase().apply {
             initialScale = Triple(0.05F, 0.05F, 0.05F)
             initialRotation = Triple(90.0F, 0.0F, 0.0F)
-            initialTranslation  = Triple(0.0F, -0.1F,0.0F )
+            initialTranslation = Triple(0.0F, -0.1F, 0.0F)
         }
     }
 

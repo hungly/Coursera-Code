@@ -7,7 +7,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class Cube : GLObject() {
+class Pyramid : GLObject() {
 
     private val colorBuffer: FloatBuffer by lazy {
         ByteBuffer.allocateDirect(COLORS.size * COLOR_PER_VERTEX).apply {
@@ -39,12 +39,9 @@ class Cube : GLObject() {
         floatArrayOf(
             -1f * initialScale.first, -1f * initialScale.second, 1f * initialScale.third,
             1f * initialScale.first, -1f * initialScale.second, 1f * initialScale.third,
-            1f * initialScale.first, 1f * initialScale.second, 1f * initialScale.third,
-            -1f * initialScale.first, 1f * initialScale.second, 1f * initialScale.third,
-            -1f * initialScale.first, 1f * initialScale.second, -1f * initialScale.third,
-            1f * initialScale.first, 1f * initialScale.second, -1f * initialScale.third,
             1f * initialScale.first, -1f * initialScale.second, -1f * initialScale.third,
             -1f * initialScale.first, -1f * initialScale.second, -1f * initialScale.third,
+            0f * initialScale.first, 2f * initialScale.second, 0f * initialScale.third
         )
     }
 
@@ -81,7 +78,6 @@ class Cube : GLObject() {
     private val mNormalHandle: Int
     private val mPositionHandle: Int
     private val mProgram: Int
-    private val mTextureSamplerHandle: Int
     private val materialShininessHandle: Int
     private val normalBuffer: FloatBuffer
     private val specularColorHandle: Int
@@ -170,6 +166,7 @@ class Cube : GLObject() {
         mPositionHandle = GLES32.glGetAttribLocation(mProgram, "aVertexPosition")
         // Enable a handle to the triangle vertices
         GLES32.glEnableVertexAttribArray(mPositionHandle)
+        // Prepare the triangle coordinate data
         MyRenderer.checkGlError("glVertexAttribPointer")
         mColorHandle = GLES32.glGetAttribLocation(mProgram, "aVertexColor")
         GLES32.glEnableVertexAttribArray(mColorHandle)
@@ -201,7 +198,7 @@ class Cube : GLObject() {
             GLES32.GL_NEAREST
         )
 
-        mTextureSamplerHandle = GLES32.glGetUniformLocation(mProgram, "uTextureSampler")
+
         useTextureHandle = GLES32.glGetUniformLocation(mProgram, "uUseTexture")
         //---------
         mMVPMatrixHandle = GLES32.glGetUniformLocation(mProgram, "uMVPMatrix")
@@ -223,12 +220,9 @@ class Cube : GLObject() {
         GLES32.glUniform4fv(specularColorHandle, 1, SpecularColor, 0)
         GLES32.glUniform1f(materialShininessHandle, MaterialShininess)
 
-        GLES32.glBlendFunc(GLES32.GL_ONE, GLES32.GL_ONE_MINUS_CONSTANT_ALPHA)
-        GLES32.glBlendEquation(GLES32.GL_FUNC_ADD)
-        GLES32.glEnable(GLES32.GL_BLEND)
-        GLES32.glDisable(GLES32.GL_CULL_FACE) //enable culling
+        GLES32.glDisable(GLES32.GL_BLEND)
+        GLES32.glDisable(GLES32.GL_CULL_FACE)
 
-        // Prepare the triangle coordinate data
         GLES32.glVertexAttribPointer(
             mPositionHandle,
             COORDS_PER_VERTEX,
@@ -286,34 +280,29 @@ class Cube : GLObject() {
         private val DiffuseColor = FloatArray(4)
         private val SpecularColor = FloatArray(4)
         private const val MaterialShininess = 5F
+
         private val COLORS = floatArrayOf(
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
-            0f, 0f, 1f, 1f,
+            1f, 0f, 0f, 1f,
+            1f, 0f, 0f, 1f,
+            1f, 0f, 0f, 1f,
+            1f, 0f, 0f, 1f,
+            1f, 0f, 0f, 1f,
         )
         private val INDEXES = intArrayOf(
-            0, 1, 2, 0, 2, 3, //front face
-            4, 5, 6, 4, 6, 7, //back face
-            2, 5, 4, 2, 4, 3, //top face
-            0, 7, 1, 1, 7, 6, //bottom face
-            0, 3, 4, 0, 4, 7, //left face
-            1, 6, 5, 1, 5, 2, //right face
+            0, 1, 4,
+            1, 2, 4,
+            2, 3, 4,
+            3, 0, 4,
+//            0, 2, 1,
+//            0, 3, 2
         )
 
         private val NORMALS = floatArrayOf(
             -1f, -1f, 1f,
             1f, -1f, 1f,
-            1f, 1f, 1f,
-            -1f, 1f, 1f,
-            -1f, 1f, -1f,
-            1f, 1f, -1f,
             1f, -1f, -1f,
             -1f, -1f, -1f,
+            0f, 1f, 0f
         )
     }
 
