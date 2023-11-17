@@ -15,16 +15,16 @@ class MyView(context: Context?) : GLSurfaceView(context) {
     private val _task by lazy {
         object : TimerTask() {
             override fun run() {
-//                _renderer.setAngleX(pXAngle) // spinning about the X-axis
-//                _renderer.setAngleY(pYAngle) // spinning about the y-axis
+                _renderer.setAngleX(pXAngle) // spinning about the X-axis
+                _renderer.setAngleY(pYAngle) // spinning about the y-axis
 //                _renderer.setAngleZ(pZAngle) // spinning about the z-axis
-//                requestRender()
-                /*pyangle+=1;//spining about the y-axis
-                if (pyangle>=360)pyangle=0;
-                pxangle++;//rotate about the x-axis
-                if (pxangle>=360)pxangle=0;
-                pzangle++;//rotate about the z-axis
-                if (pzangle>=360)pzangle=0;*/
+                pYAngle += 1F // rotate about the y-axis
+                if (pYAngle >= 360) pYAngle = 0F
+                pXAngle += 1F // rotate about the x-axis
+                if (pXAngle >= 360) pXAngle = 0F
+//                pZAngle++; // rotate about the z-axis
+//                if (pZAngle >= 360) pZAngle = 0F
+                requestRender()
             }
         }
     }
@@ -33,9 +33,9 @@ class MyView(context: Context?) : GLSurfaceView(context) {
         Timer()
     }
 
-    private val pXAngle: Float = 0F
-    private val pYAngle: Float = 0F
-    private val pZAngle: Float = 0F
+    private var pXAngle: Float = 0F
+    private var pYAngle: Float = 0F
+    private var pZAngle: Float = 0F
 
     private var mPreviousX = 0F
     private var mPreviousY = 0F
@@ -45,27 +45,27 @@ class MyView(context: Context?) : GLSurfaceView(context) {
         setRenderer(_renderer)
         // Render the view only when there is a change in the drawing data
         renderMode = RENDERMODE_WHEN_DIRTY
-        _timer.scheduleAtFixedRate(_task, 1000, 100)
+        _timer.scheduleAtFixedRate(_task, 1000, 25)
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val x = event?.x ?: 0F
-        val y = event?.y ?: 0F
-        when (event?.action) {
-            MotionEvent.ACTION_MOVE -> {
-                val dX = x - mPreviousX
-                val dY = y - mPreviousY
-//                if (y > (height / 2)) dX *= -1
-//                if (x < (width / 2)) dY *= -1
-                _renderer.setAngleY(_renderer.getAngleY() + (dX * TOUCH_SCALE_FACTOR))
-                _renderer.setAngleX(_renderer.getAngleX() + (dY * TOUCH_SCALE_FACTOR))
-                requestRender()
-            }
-        }
-        mPreviousX = x
-        mPreviousY = y
-        return true
-    }
+//    override fun onTouchEvent(event: MotionEvent?): Boolean {
+//        val x = event?.x ?: 0F
+//        val y = event?.y ?: 0F
+//        when (event?.action) {
+//            MotionEvent.ACTION_MOVE -> {
+//                val dX = x - mPreviousX
+//                val dY = y - mPreviousY
+////                if (y > (height / 2)) dX *= -1
+////                if (x < (width / 2)) dY *= -1
+//                _renderer.setAngleY(_renderer.getAngleY() + (dX * TOUCH_SCALE_FACTOR))
+//                _renderer.setAngleX(_renderer.getAngleX() + (dY * TOUCH_SCALE_FACTOR))
+//                requestRender()
+//            }
+//        }
+//        mPreviousX = x
+//        mPreviousY = y
+//        return true
+//    }
 
     companion object {
         private const val TOUCH_SCALE_FACTOR = 180F / 320
