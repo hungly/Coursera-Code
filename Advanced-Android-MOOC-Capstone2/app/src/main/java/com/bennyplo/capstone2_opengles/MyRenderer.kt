@@ -8,7 +8,9 @@ import com.bennyplo.capstone2_opengles.gl_object.Constant
 import com.bennyplo.capstone2_opengles.gl_object.Cube
 import com.bennyplo.capstone2_opengles.gl_object.ECG
 import com.bennyplo.capstone2_opengles.gl_object.FloorPlan
+import com.bennyplo.capstone2_opengles.gl_object.HalfCone
 import com.bennyplo.capstone2_opengles.gl_object.Pyramid
+import com.bennyplo.capstone2_opengles.gl_object.Sphere
 import com.bennyplo.capstone2_opengles.gl_object.Vase
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
@@ -43,6 +45,22 @@ class MyRenderer : GLSurfaceView.Renderer {
         }
     }
 
+    private val halfCone by lazy {
+        HalfCone().apply {
+            initialScale = Triple(0.2F, 0.2F, 0.2F)
+            initialRotation = Triple(0.0F, 0.0F, 0.0F)
+            initialTranslation = Triple(-2.0F, 2.0F, 0.0F)
+        }
+    }
+
+    private val sphere by lazy {
+        Sphere().apply {
+            initialScale = Triple(0.15F, 0.15F, 0.15F)
+            initialRotation = Triple(90.0F, 0.0F, 0.0F)
+            initialTranslation = Triple(2.0F, 0.0F, -2.0F)
+        }
+    }
+
     private val floorPlan by lazy {
         FloorPlan()
     }
@@ -54,6 +72,8 @@ class MyRenderer : GLSurfaceView.Renderer {
             vase,
             pyramid,
             cube,
+            halfCone,
+            sphere,
             Base().apply {
                 initialScale = Triple(0.25F, 0.25F, 0.25F)
                 initialTranslation = Triple(0.0F, 0.0F, -0.5F)

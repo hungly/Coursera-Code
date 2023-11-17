@@ -286,7 +286,7 @@ class Pyramid : GLObject() {
             1f, 0f, 0f, 1f,
             1f, 0f, 0f, 1f,
             1f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
+            0f, 1f, 0f, 1f,
         )
         private val INDEXES = intArrayOf(
             0, 1, 4,
