@@ -10,6 +10,7 @@ import com.bennyplo.capstone2_opengles.gl_object.Cube
 import com.bennyplo.capstone2_opengles.gl_object.ECG
 import com.bennyplo.capstone2_opengles.gl_object.FloorPlan
 import com.bennyplo.capstone2_opengles.gl_object.HalfCone
+import com.bennyplo.capstone2_opengles.gl_object.Picture
 import com.bennyplo.capstone2_opengles.gl_object.Pyramid
 import com.bennyplo.capstone2_opengles.gl_object.Sphere
 import com.bennyplo.capstone2_opengles.gl_object.Vase
@@ -84,6 +85,34 @@ class MyRenderer : GLSurfaceView.Renderer {
             halfCone,
             sphere,
             characterS,
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialTranslation = Triple(-2.0F, 1.0F - 0.008F, 0.0F)
+            },
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialTranslation = Triple(2.0F, 1.0F - 0.008F, 0.0F)
+            },
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialRotation = Triple(0.0F, 0.0F, 180.0F)
+                initialTranslation = Triple(-2.0F, 1.0F - 0.008F, 0.0F)
+            },
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialRotation = Triple(0.0F, 0.0F, 180.0F)
+                initialTranslation = Triple(2.0F, 1.0F - 0.008F, 0.0F)
+            },
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialRotation = Triple(0.0F, 0.0F, 90.0F)
+                initialTranslation = Triple(0.0F, 3.0F - 0.008F, 0.0F)
+            },
+            Picture().apply {
+                initialScale = Triple(0.15F, 1.0F, 0.2F)
+                initialRotation = Triple(0.0F, 0.0F, -90.0F)
+                initialTranslation = Triple(0.0F, 3.0F - 0.008F, 0.0F)
+            },
             Base().apply {
                 initialScale = Triple(0.25F, 0.25F, 0.25F)
                 initialTranslation = Triple(0.0F, 0.0F, -0.5F)
