@@ -4,6 +4,7 @@ import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import com.bennyplo.capstone2_opengles.gl_object.Base
+import com.bennyplo.capstone2_opengles.gl_object.CharacterS
 import com.bennyplo.capstone2_opengles.gl_object.Constant
 import com.bennyplo.capstone2_opengles.gl_object.Cube
 import com.bennyplo.capstone2_opengles.gl_object.ECG
@@ -61,6 +62,14 @@ class MyRenderer : GLSurfaceView.Renderer {
         }
     }
 
+    private val characterS by lazy {
+        CharacterS().apply {
+            initialScale = Triple(0.3F, 0.3F, 0.3F)
+            initialRotation = Triple(90.0F, 0.0F, 0.0F)
+            initialTranslation = Triple(2.0F, 0.15F, 2.0F)
+        }
+    }
+
     private val floorPlan by lazy {
         FloorPlan()
     }
@@ -74,6 +83,7 @@ class MyRenderer : GLSurfaceView.Renderer {
             cube,
             halfCone,
             sphere,
+            characterS,
             Base().apply {
                 initialScale = Triple(0.25F, 0.25F, 0.25F)
                 initialTranslation = Triple(0.0F, 0.0F, -0.5F)
