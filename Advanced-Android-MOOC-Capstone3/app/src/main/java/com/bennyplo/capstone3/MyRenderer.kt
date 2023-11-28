@@ -86,13 +86,25 @@ class MyRenderer : GLSurfaceView.Renderer {
         GLES32.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height
         val left = -ratio
-        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 0.5F, 8.0F)
+        Matrix.frustumM(projectionMatrix, 0, left, ratio, -1.0F, 1.0F, 1F, 16.0F)
     }
 
     override fun onSurfaceCreated(unused: GL10, config: EGLConfig) {
         // Set the background frame color to black
         GLES32.glClearColor(0.0F, 0.0F, 0.0F, 1.0F)
         floorPlan = FloorPlan3D()
+    }
+
+    fun getXAngle(): Float {
+        return xAngle
+    }
+
+    fun getYAngle(): Float {
+        return yAngle
+    }
+
+    fun getZAngle(): Float {
+        return zAngle
     }
 
     fun setXAngle(angle: Float) {
