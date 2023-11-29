@@ -1,4 +1,4 @@
-package com.bennyplo.capstone3.gl_object
+package com.bennyplo.capstone3.model
 
 object Constant {
 
