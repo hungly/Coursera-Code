@@ -21,7 +21,7 @@ class MyView(context: Context?) : GLSurfaceView(context) {
     private var mOriginalZ: Float? = null
 
     private val _renderer: MyRenderer by lazy {
-        MyRenderer() // Set the Renderer for drawing on the GLSurfaceView
+        MyRenderer(context) // Set the Renderer for drawing on the GLSurfaceView
     }
 
     private val _task: TimerTask by lazy {

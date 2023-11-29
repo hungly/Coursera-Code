@@ -1,15 +1,17 @@
 package com.bennyplo.capstone3
 
+import android.content.Context
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import com.bennyplo.capstone3.model.Constant.MATRIX_SIZE
 import com.bennyplo.capstone3.model.gl_object.FloorPlan3D
+import com.bennyplo.capstone3.model.gl_object.Painting
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class MyRenderer : GLSurfaceView.Renderer {
+class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
 
     private var xAngle = 0.0F
     private var yAngle = 0.0F
@@ -36,7 +38,8 @@ class MyRenderer : GLSurfaceView.Renderer {
 
     private val objects by lazy {
         arrayOf(
-            floorPlan
+            floorPlan,
+            Painting(context, R.drawable.painting_1),
         )
     }
 
@@ -109,21 +112,21 @@ class MyRenderer : GLSurfaceView.Renderer {
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, _rotationMatrixX, 0)
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, _rotationMatrixZ, 0)
 
-            Matrix.translateM(
-                modelMatrix,
-                0,
-                it.initialTranslation.xTranslation,
-                it.initialTranslation.yTranslation,
-                it.initialTranslation.zTranslation
-            )
+//            Matrix.translateM(
+//                modelMatrix,
+//                0,
+//                it.initialTranslation.xTranslation,
+//                it.initialTranslation.yTranslation,
+//                it.initialTranslation.zTranslation
+//            )
 
-            Matrix.scaleM(
-                modelMatrix,
-                0,
-                it.initialScale.xScale,
-                it.initialScale.yScale,
-                it.initialScale.zScale
-            )
+//            Matrix.scaleM(
+//                modelMatrix,
+//                0,
+//                it.initialScale.xScale,
+//                it.initialScale.yScale,
+//                it.initialScale.zScale
+//            )
 
             // Calculate the projection and view transformation
             // Calculate the model view matrix

@@ -2,7 +2,6 @@ package com.bennyplo.capstone3.model.gl_object
 
 import android.opengl.GLES32
 import com.bennyplo.capstone3.MyRenderer.Companion.checkGlError
-import com.bennyplo.capstone3.MyRenderer.Companion.loadShader
 import com.bennyplo.capstone3.model.GLObject
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -20,10 +19,6 @@ class FloorPlan3D : GLObject() {
         }
     }
 
-    private val _colorHandle: Int by lazy {
-        GLES32.glGetAttribLocation(program, "aVertexColor")
-    }
-
     private val _indexBuffer: IntBuffer by lazy {
         IntBuffer.allocate(INDEXES.size).apply {
             put(INDEXES)
@@ -34,11 +29,6 @@ class FloorPlan3D : GLObject() {
     private val _mVPMatrixHandle: Int by lazy {
         // Get handle to shape's transformation matrix
         GLES32.glGetUniformLocation(program, "uMVPMatrix")
-    }
-
-    private val _positionHandle: Int by lazy {
-        // Get handle to vertex shader's vPosition member
-        GLES32.glGetAttribLocation(program, "aVertexPosition")
     }
 
     private val _vertexBuffer: FloatBuffer by lazy {
@@ -53,11 +43,11 @@ class FloorPlan3D : GLObject() {
 
     private val _vertexCount // number of vertices
             : Int by lazy {
-        VERTICES.size / COORDS_PER_VERTEX
+        VERTICES.size / COORDINATES_PER_VERTEX
     }
 
     private val floorColors by lazy {
-        val numberOfVertices = VERTICES.size / COORDS_PER_VERTEX
+        val numberOfVertices = VERTICES.size / COORDINATES_PER_VERTEX
         val colors = FloatArray(numberOfVertices * COLORS_PER_VERTEX)
         (0 until numberOfVertices).forEach {
             when {
@@ -88,29 +78,9 @@ class FloorPlan3D : GLObject() {
         }
         colors
     }
+    override var textureRatio: Float = 0.0F
 
-    init {
-        // Prepare shaders and OpenGL program
-        val vertexShader = loadShader(GLES32.GL_VERTEX_SHADER, VERTEX_SHADER_CODE)
-        val fragmentShader = loadShader(GLES32.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE)
-        GLES32.glAttachShader(program, vertexShader) // Add the vertex shader to program
-        GLES32.glAttachShader(program, fragmentShader) // Add the fragment shader to program
-        GLES32.glLinkProgram(program) // Link the  OpenGL program to create an executable
-        // Enable a handle to the triangle vertices
-        GLES32.glEnableVertexAttribArray(_positionHandle)
-        // Enable a handle to the  colour
-        GLES32.glEnableVertexAttribArray(_colorHandle)
-        // Prepare the colour coordinate data
-        GLES32.glVertexAttribPointer(
-            _colorHandle,
-            COLORS_PER_VERTEX,
-            GLES32.GL_FLOAT,
-            false,
-            colorStride,
-            _colorBuffer
-        )
-        checkGlError("glGetUniformLocation")
-    }
+    override val textureImageHandler: Int? = null
 
     override fun draw(mvpMatrix: FloatArray?) {
         super.draw(mvpMatrix)
@@ -118,23 +88,25 @@ class FloorPlan3D : GLObject() {
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(_mVPMatrixHandle, 1, false, mvpMatrix, 0)
         checkGlError("glUniformMatrix4fv")
-        //set the attribute of the vertex to point to the vertex buffer
+
+        // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
-            _positionHandle,
-            COORDS_PER_VERTEX,
+            positionHandle,
+            COORDINATES_PER_VERTEX,
             GLES32.GL_FLOAT,
             false,
-            vertexStride,
+            VERTEX_STRIDE,
             _vertexBuffer
         )
         GLES32.glVertexAttribPointer(
-            _colorHandle,
-            COORDS_PER_VERTEX,
+            colorHandle,
+            COORDINATES_PER_VERTEX,
             GLES32.GL_FLOAT,
             false,
-            colorStride,
+            COLOR_STRIDE,
             _colorBuffer
         )
+
         // Draw the floor plan
 //        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, _vertexCount)
         GLES32.glDrawElements(
@@ -146,23 +118,6 @@ class FloorPlan3D : GLObject() {
     }
 
     companion object {
-
-        private const val FRAGMENT_SHADER_CODE = "precision mediump float;" +
-                "varying vec4 vColor;" +
-                "void main() {" +
-                "   gl_FragColor = vColor;" +
-                "}"
-
-        private const val VERTEX_SHADER_CODE =
-            "attribute vec3 aVertexPosition;" +
-                    "uniform mat4 uMVPMatrix;" +
-                    "varying vec4 vColor;" +
-                    "attribute vec4 aVertexColor;" +  // The colour  of the object
-                    "void main() {" +
-                    "   gl_Position = uMVPMatrix *vec4(aVertexPosition, 1.0);" +
-                    "   gl_PointSize = 40.0;" +
-                    "   vColor = aVertexColor;" +
-                    "}" // Get the colour from the application program
 
         private var VERTICES = floatArrayOf(
             // Bottom
