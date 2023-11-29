@@ -125,7 +125,7 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
     }
 
     private fun calculateVerticesScaled() {
-        val originalHeight = abs(VERTICES[7] - VERTICES[1])
+        val originalHeight = abs(VERTICES[8] - VERTICES[2])
         val originalWidth = abs(VERTICES[3] - VERTICES[0])
         when {
             textureRatio < 0 -> {
@@ -143,7 +143,7 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
             textureRatio > 0 -> {
                 val newHeight = originalHeight / abs(textureRatio)
                 val reduceAmount = (originalHeight - newHeight) / 2
-                for (i in 1..VERTICES.lastIndex step 3) {
+                for (i in 2..VERTICES.lastIndex step 3) {
                     if (VERTICES[i] < 0) {
                         scaledVertices[i] = VERTICES[i] + reduceAmount
                     } else {
@@ -157,10 +157,10 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
     companion object {
 
         private var VERTICES = floatArrayOf(
-            -2.0F, -2.0F, 0.0F,
-            2.0F, -2.0F, 0.0F,
-            2.0F, 2.0F, 0.0F,
-            -2.0F, 2.0F, 0.0F
+            -2.0F, 0.0F, -2.0F,
+            2.0F, 0.0F, -2.0F,
+            2.0F, 0.0F, 2.0F,
+            -2.0F, 0.0F, 2.0F,
         )
 
         private val INDEXES = intArrayOf(
