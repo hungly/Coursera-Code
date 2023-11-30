@@ -1,14 +1,16 @@
 package com.bennyplo.capstone3.model.gl_object
 
+import android.content.Context
 import android.opengl.GLES32
 import com.bennyplo.capstone3.MyRenderer.Companion.checkGlError
+import com.bennyplo.capstone3.R
 import com.bennyplo.capstone3.model.GLObject
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class FloorPlan3D : GLObject() {
+class FloorPlan3D(context: Context?) : GLObject() {
 
     private val _colorBuffer: FloatBuffer by lazy {
         ByteBuffer.allocateDirect(floorColors.size * COLORS_PER_VERTEX).apply {
@@ -19,9 +21,23 @@ class FloorPlan3D : GLObject() {
         }
     }
 
-    private val _indexBuffer: IntBuffer by lazy {
-        IntBuffer.allocate(INDEXES.size).apply {
-            put(INDEXES)
+    private val _floorIndexBuffer: IntBuffer by lazy {
+        IntBuffer.allocate(FLOOR_INDEXES.size).apply {
+            put(FLOOR_INDEXES)
+            position(0)
+        }
+    }
+
+    private val _outerIndexBuffer: IntBuffer by lazy {
+        IntBuffer.allocate(OUTER_INDEXES.size).apply {
+            put(OUTER_INDEXES)
+            position(0)
+        }
+    }
+
+    private val _innerIndexBuffer: IntBuffer by lazy {
+        IntBuffer.allocate(INNER_INDEXES.size).apply {
+            put(INNER_INDEXES)
             position(0)
         }
     }
@@ -29,6 +45,33 @@ class FloorPlan3D : GLObject() {
     private val _mVPMatrixHandle: Int by lazy {
         // Get handle to shape's transformation matrix
         GLES32.glGetUniformLocation(program, "uMVPMatrix")
+    }
+
+    private val _floorTextureBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(TEXTURE_COORDINATE_DATA.size * Float.SIZE_BYTES).apply {
+            order(ByteOrder.nativeOrder())
+        }.asFloatBuffer().apply {
+            put(TEXTURE_COORDINATE_DATA)
+            position(0)
+        }
+    }
+
+    private val _outerTextureBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(TEXTURE_COORDINATE_DATA.size * Float.SIZE_BYTES).apply {
+            order(ByteOrder.nativeOrder())
+        }.asFloatBuffer().apply {
+            put(TEXTURE_COORDINATE_DATA)
+            position(0)
+        }
+    }
+
+    private val _innerTextureBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(TEXTURE_COORDINATE_DATA.size * Float.SIZE_BYTES).apply {
+            order(ByteOrder.nativeOrder())
+        }.asFloatBuffer().apply {
+            put(TEXTURE_COORDINATE_DATA)
+            position(0)
+        }
     }
 
     private val _vertexBuffer: FloatBuffer by lazy {
@@ -39,11 +82,6 @@ class FloorPlan3D : GLObject() {
             put(VERTICES)
             position(0)
         }
-    }
-
-    private val _vertexCount // number of vertices
-            : Int by lazy {
-        VERTICES.size / COORDINATES_PER_VERTEX
     }
 
     private val floorColors by lazy {
@@ -78,9 +116,22 @@ class FloorPlan3D : GLObject() {
         }
         colors
     }
+
     override var textureRatio: Float = 0.0F
 
     override val textureImageHandler: Int? = null
+
+    private val floorTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.floor, context)
+    }
+
+    private val innerTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.interior_walls, context)
+    }
+
+    private val outerTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.exterior_walls, context)
+    }
 
     override fun draw(mvpMatrix: FloatArray?) {
         super.draw(mvpMatrix)
@@ -108,12 +159,23 @@ class FloorPlan3D : GLObject() {
         )
 
         // Draw the floor plan
-//        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, _vertexCount)
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
-            INDEXES.size,
+            FLOOR_INDEXES.size,
             GLES32.GL_UNSIGNED_INT,
-            _indexBuffer
+            _floorIndexBuffer
+        )
+        GLES32.glDrawElements(
+            GLES32.GL_TRIANGLES,
+            OUTER_INDEXES.size,
+            GLES32.GL_UNSIGNED_INT,
+            _outerIndexBuffer
+        )
+        GLES32.glDrawElements(
+            GLES32.GL_TRIANGLES,
+            INNER_INDEXES.size,
+            GLES32.GL_UNSIGNED_INT,
+            _innerIndexBuffer
         )
     }
 
@@ -201,22 +263,35 @@ class FloorPlan3D : GLObject() {
             3.0F, -3.0F, -1.0F, // 59
         )
 
-        private val INDEXES = intArrayOf(
-            0, 1, 28, 1, 29, 28,
-            2, 3, 30, 3, 31, 30,
-            4, 5, 32, 5, 33, 32,
-            6, 7, 34, 7, 35, 34,
-            8, 9, 36, 9, 37, 36,
-            10, 11, 38, 11, 39, 38,
-            12, 13, 40, 13, 41, 40,
-            14, 15, 42, 15, 43, 42,
-            16, 17, 44, 17, 45, 44,
-            18, 19, 46, 19, 47, 46,
-            20, 21, 48, 21, 49, 48,
-            22, 23, 50, 23, 51, 50,
-            24, 25, 52, 25, 53, 52,
-            26, 27, 54, 27, 55, 54,
-            56, 57, 58, 56, 58, 59
+        private val FLOOR_INDEXES = intArrayOf(
+            56, 57, 58, 56, 58, 59 // Floor
+        )
+
+        private val OUTER_INDEXES = intArrayOf(
+            0, 1, 28, 1, 29, 28, // Outer - Left
+            2, 3, 30, 3, 31, 30, // Outer - Top
+            4, 5, 32, 5, 33, 32, // Outer - Right
+            6, 7, 34, 7, 35, 34, // Outer - Bottom
+        )
+
+        private val INNER_INDEXES = intArrayOf(
+            8, 9, 36, 9, 37, 36, // Inner - Horizontal - Left - Bottom
+            10, 11, 38, 11, 39, 38, // Inner - Horizontal - Left - Top
+            12, 13, 40, 13, 41, 40, // Inner - Horizontal - Right - Top
+            14, 15, 42, 15, 43, 42, // Inner - Horizontal - Right - Bottom
+            16, 17, 44, 17, 45, 44, // Inner - Vertical - Left - Bottom
+            18, 19, 46, 19, 47, 46, // Inner - Vertical - Left - Middle
+            20, 21, 48, 21, 49, 48, // Inner - Vertical - Left - Top
+            22, 23, 50, 23, 51, 50, // Inner - Vertical - Right - Top
+            24, 25, 52, 25, 53, 52, // Inner - Vertical - Right - Middle
+            26, 27, 54, 27, 55, 54, // Inner - Vertical - Right - Bottom
+        )
+
+        private val TEXTURE_COORDINATE_DATA = floatArrayOf(
+            0.0F, 1.0F,
+            1.0F, 1.0F,
+            1.0F, 0.0F,
+            0.0F, 0.0F,
         )
     }
 

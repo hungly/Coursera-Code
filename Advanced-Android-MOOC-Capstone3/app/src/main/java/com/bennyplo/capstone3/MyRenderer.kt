@@ -24,7 +24,7 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
     private val _rotationMatrixZ by lazy { FloatArray(MATRIX_SIZE) }
 
     private val floorPlan: FloorPlan3D by lazy {
-        FloorPlan3D()
+        FloorPlan3D(context)
     }
 
     private val mVMatrix by lazy {

@@ -67,21 +67,13 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
             calculateVerticesScaled()
         }
 
-    override val textureImageHandler: Int by lazy {
-        loadTextureFromResource(resourceId, context)
-    }
+    // Don't lazy load here because auto scaling need bitmap height and width ASAP
+    override val textureImageHandler = loadTextureFromResource(resourceId, context)
 
-    override fun draw(mvpMatrix: FloatArray?) {
-        super.draw(mvpMatrix)
-
-        GLES32.glEnable(GLES32.GL_CULL_FACE)
-        GLES32.glCullFace(GLES32.GL_FRONT)
-        GLES32.glFrontFace(GLES32.GL_CW)
-
+    init {
         // Setup texture
-        GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
-        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureImageHandler)
-        GLES32.glUniform1i(textureSamplerHandle, 0)
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE0) // Always use texture 0
+        GLES32.glUniform1i(textureSamplerHandle, 0) // Always use point texture sampler index to 0
         GLES32.glVertexAttribPointer(
             textureCoordinateHandle,
             TEXTURE_COORDINATES_PER_VERTEX,
@@ -90,7 +82,14 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
             TEXTURE_STRIDE,
             _textureBuffer
         )
-        GLES32.glUniform1i(useTextureHandle, 1)
+    }
+
+    override fun draw(mvpMatrix: FloatArray?) {
+        super.draw(mvpMatrix)
+
+        GLES32.glEnable(GLES32.GL_CULL_FACE)
+        GLES32.glCullFace(GLES32.GL_FRONT)
+        GLES32.glFrontFace(GLES32.GL_CW)
 
         // Apply the projection and view transformation
         GLES32.glUniformMatrix4fv(_mVPMatrixHandle, 1, false, mvpMatrix, 0)
@@ -114,8 +113,11 @@ class Painting(context: Context?, @DrawableRes resourceId: Int) : GLObject() {
             _colorBuffer
         )
 
+        // Setup texture
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureImageHandler)
+        GLES32.glUniform1i(useTextureHandle, 1)
+
         // Draw the floor plan
-//        GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, _vertexCount)
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
             INDEXES.size,
