@@ -65,10 +65,10 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
     }
 
     private val _floorTextureBuffer: FloatBuffer by lazy {
-        ByteBuffer.allocateDirect(TEXTURE_COORDINATE_DATA.size * Float.SIZE_BYTES).apply {
+        ByteBuffer.allocateDirect(FLOOR_TEXTURE_COORDINATE_DATA.size * Float.SIZE_BYTES).apply {
             order(ByteOrder.nativeOrder())
         }.asFloatBuffer().apply {
-            put(TEXTURE_COORDINATE_DATA)
+            put(FLOOR_TEXTURE_COORDINATE_DATA)
             position(0)
         }
     }
@@ -273,55 +273,6 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             1.0F + offsetAmount, -3.0F, 1.0F, // 77
             1.0F + offsetAmount, -1.0F - doorWidth, 1.0F, // 78
             1.0F + offsetAmount, -1.0F - doorWidth, -1.0F, // 79
-
-//            // Inner - Horizontal - Left
-//            -3.0F, -1.0F, -1.0F, // 8
-//            -1.0F, -1.0F, -1.0F, // 9
-//            -3.0F, 1.0F, -1.0F, // 10
-//            -1.0F, 1.0F, -1.0F, // 11
-//            // Inner - Horizontal - Right
-//            3.0F, 1.0F, -1.0F, // 12
-//            1.0F, 1.0F, -1.0F, // 13
-//            3.0F, -1.0F, -1.0F, // 14
-//            1.0F, -1.0F, -1.0F, // 15
-//            // Inner - Vertical - Left
-//            -1.0F, -3.0F, -1.0F, // 16
-//            -1.0F, -1.5F, -1.0F, // 17
-//            -1.0F, -0.5F, -1.0F, // 18
-//            -1.0F, 0.5F, -1.0F, // 19
-//            -1.0F, 1.5F, -1.0F, // 20
-//            -1.0F, 3.0F, -1.0F, // 21
-//            // Inner - Vertical - Right
-//            1.0F, 3.0F, -1.0F, // 22
-//            1.0F, 1.5F, -1.0F, // 23
-//            1.0F, 0.5F, -1.0F, // 24
-//            1.0F, -0.5F, -1.0F, // 25
-//            1.0F, -1.5F, -1.0F, // 26
-//            1.0F, -3.0F, -1.0F, // 27
-//            // Inner - Horizontal - Left
-//            -3.0F, -1.0F, 1.0F, // 36
-//            -1.0F, -1.0F, 1.0F, // 37
-//            -3.0F, 1.0F, 1.0F, // 38
-//            -1.0F, 1.0F, 1.0F, // 39
-//            // Inner - Horizontal - Right
-//            3.0F, 1.0F, 1.0F, // 40
-//            1.0F, 1.0F, 1.0F, // 41
-//            3.0F, -1.0F, 1.0F, // 42
-//            1.0F, -1.0F, 1.0F, // 43
-//            // Inner - Vertical - Left
-//            -1.0F, -3.0F, 1.0F, // 44
-//            -1.0F, -1.5F, 1.0F, // 45
-//            -1.0F, -0.5F, 1.0F, // 46
-//            -1.0F, 0.5F, 1.0F, // 47
-//            -1.0F, 1.5F, 1.0F, // 48
-//            -1.0F, 3.0F, 1.0F, // 49
-//            // Inner - Vertical - Right
-//            1.0F, 3.0F, 1.0F, // 50
-//            1.0F, 1.5F, 1.0F, // 51
-//            1.0F, 0.5F, 1.0F, // 52
-//            1.0F, -0.5F, 1.0F, // 53
-//            1.0F, -1.5F, 1.0F, // 54
-//            1.0F, -3.0F, 1.0F, // 55
         )
     }
 
@@ -340,13 +291,19 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             vertexBuffer = _floorVertexBuffer,
             colorBuffer = _floorColorBuffer,
             indexBuffer = _floorIndexBuffer,
-            indexSize = FLOOR_INDEXES.size
+            indexSize = FLOOR_INDEXES.size,
+            textureBuffer = _floorTextureBuffer,
+            textureImageHandler = floorTextureImageHandler,
+            useTexture = 1
         )
         draw(
             vertexBuffer = _exteriorWallsVertexBuffer,
             colorBuffer = _exteriorWallsColorBuffer,
             indexBuffer = _exteriorWallsIndexBuffer,
-            indexSize = EXTERIOR_WALLS_INDEXES.size
+            indexSize = EXTERIOR_WALLS_INDEXES.size,
+            textureBuffer = _exteriorWallsTextureBuffer,
+            textureImageHandler = exteriorWallsTextureImageHandler,
+            useTexture = 0
         )
 
         GLES32.glEnable(GLES32.GL_CULL_FACE)
@@ -357,7 +314,10 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             vertexBuffer = _interiorWallVertexBuffer,
             colorBuffer = _interiorWallsColorBuffer,
             indexBuffer = _interiorWallsIndexBuffer,
-            indexSize = INTERIOR_WALLS_INDEXES.size
+            indexSize = INTERIOR_WALLS_INDEXES.size,
+            textureBuffer = _interiorWallsTextureBuffer,
+            textureImageHandler = interiorWallsTextureImageHandler,
+            useTexture = 0
         )
     }
 
@@ -365,7 +325,10 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         vertexBuffer: FloatBuffer,
         colorBuffer: FloatBuffer,
         indexBuffer: IntBuffer,
-        indexSize: Int
+        indexSize: Int,
+        textureBuffer: FloatBuffer,
+        textureImageHandler: Int,
+        useTexture: Int
     ) {
         // Set the attribute of the vertex to point to the vertex buffer
         GLES32.glVertexAttribPointer(
@@ -384,6 +347,21 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             COLOR_STRIDE,
             colorBuffer
         )
+
+        // Set up texture
+        GLES32.glVertexAttribPointer(
+            textureCoordinateHandle,
+            TEXTURE_COORDINATES_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            TEXTURE_STRIDE,
+            textureBuffer
+        )
+        GLES32.glActiveTexture(GLES32.GL_TEXTURE0)
+        GLES32.glBindTexture(GLES32.GL_TEXTURE_2D, textureImageHandler)
+        GLES32.glUniform1i(textureSamplerHandle, 0)
+        GLES32.glUniform1i(useTextureHandle, useTexture)
+
         GLES32.glDrawElements(
             GLES32.GL_TRIANGLES,
             indexSize,
@@ -403,6 +381,13 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
 
         private val FLOOR_INDEXES = intArrayOf(
             0, 1, 2, 0, 2, 3
+        )
+
+        private val FLOOR_TEXTURE_COORDINATE_DATA = floatArrayOf(
+            0.0F, 4.0F,
+            0.0F, 0.0F,
+            4.0F, 0.0F,
+            4.0F, 4.0F,
         )
 
         private val EXTERIOR_WALLS_VERTICES = floatArrayOf(
@@ -505,17 +490,6 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             74, 78, 75, 75, 78, 79, // Top
 //            72, 76, 73, 73, 76, 77, // Bottom
             73, 77, 74, 74, 77, 78, // Front
-
-//            8, 9, 36, 9, 37, 36, // Inner - Horizontal - Left - Bottom
-//            10, 11, 38, 11, 39, 38, // Inner - Horizontal - Left - Top
-//            12, 13, 40, 13, 41, 40, // Inner - Horizontal - Right - Top
-//            14, 15, 42, 15, 43, 42, // Inner - Horizontal - Right - Bottom
-//            16, 17, 44, 17, 45, 44, // Inner - Vertical - Left - Bottom
-//            18, 19, 46, 19, 47, 46, // Inner - Vertical - Left - Middle
-//            20, 21, 48, 21, 49, 48, // Inner - Vertical - Left - Top
-//            22, 23, 50, 23, 51, 50, // Inner - Vertical - Right - Top
-//            24, 25, 52, 25, 53, 52, // Inner - Vertical - Right - Middle
-//            26, 27, 54, 27, 55, 54, // Inner - Vertical - Right - Bottom
         )
 
         private val TEXTURE_COORDINATE_DATA = floatArrayOf(
