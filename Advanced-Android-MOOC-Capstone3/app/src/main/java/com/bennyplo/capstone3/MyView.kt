@@ -68,7 +68,7 @@ class MyView(context: Context?) : GLSurfaceView(context) {
     }
 
     private fun startRotating() {
-//        _timer.scheduleAtFixedRate(_task, 1000, 25)
+        _timer.scheduleAtFixedRate(_task, 1000, 25)
     }
 
     @SuppressLint("ClickableViewAccessibility")

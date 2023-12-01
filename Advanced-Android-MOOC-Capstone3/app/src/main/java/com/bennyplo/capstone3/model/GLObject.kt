@@ -118,7 +118,7 @@ abstract class GLObject {
                     "   if (uUseTexture) {" +
                     "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
                     "       if (fragmentColor.a < 0.1) discard;" +
-                    "       gl_FragColor = fragmentColor * vColor;" +
+                    "       gl_FragColor = fragmentColor;" +
                     "   } else {" +
                     "       gl_FragColor = vColor;" +
                     "   };" +

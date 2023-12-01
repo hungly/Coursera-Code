@@ -41,21 +41,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setupFullscreen()
     }
 
-    override fun onPause() {
-        super.onPause()
-
+//    override fun onPause() {
+//        super.onPause()
+//
 //        _sensorManager?.unregisterListener(this)
-        _glView.onPause()
-    }
+//        _glView.onPause()
+//    }
 
-    override fun onResume() {
-        super.onResume()
-
+//    override fun onResume() {
+//        super.onResume()
+//
 //        _rotationSensor?.let {
 //            _sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST)
 //        }
-        _glView.onResume()
-    }
+//        _glView.onResume()
+//    }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }

@@ -24,7 +24,7 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
     private val _rotationMatrixZ by lazy { FloatArray(MATRIX_SIZE) }
 
     private val floorPlan: FloorPlan3D by lazy {
-        FloorPlan3D(context)
+        FloorPlan3D(context, wallThickness = 0.2F, doorWidth = 0.6F)
     }
 
     private val mVMatrix by lazy {
@@ -40,10 +40,11 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
     }
 
     private val objects by lazy {
+        val wallOffset = floorPlan.wallThickness / 2.0F
         arrayOf(
             floorPlan,
             Painting(context, R.drawable.painting_1).apply {
-                initialScale = Scale(xScale = 0.3F, yScale = 1.0F, zScale = 0.3F)
+                initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
                 initialTranslation = Translation(
                     xTranslation = 0.0F,
                     yTranslation = 3.0F - 0.00009F,
@@ -52,37 +53,37 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
             },
             Painting(context, R.drawable.painting_2).apply {
                 initialRotation = Rotation(xRotation = 0.0F, yRotation = 0.0F, zRotation = 90.0F)
-                initialScale = Scale(xScale = 0.3F, yScale = 1.0F, zScale = 0.3F)
+                initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
                 initialTranslation = Translation(
-                    xTranslation = 2.25F,
-                    yTranslation = 1.0F - 0.00009F,
+                    xTranslation = 2.35F,
+                    yTranslation = 1.0F - wallOffset - 0.00009F,
                     zTranslation = 0.0F
                 )
             },
             Painting(context, R.drawable.painting_3).apply {
                 initialRotation = Rotation(xRotation = 0.0F, yRotation = 0.0F, zRotation = -90.0F)
-                initialScale = Scale(xScale = 0.3F, yScale = 1.0F, zScale = 0.3F)
+                initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
                 initialTranslation = Translation(
-                    xTranslation = -2.25F,
-                    yTranslation = 1.0F - 0.00009F,
+                    xTranslation = -2.35F,
+                    yTranslation = 1.0F - wallOffset - 0.00009F,
                     zTranslation = 0.0F
                 )
             },
             Painting(context, R.drawable.painting_4).apply {
                 initialRotation = Rotation(xRotation = 0.0F, yRotation = 0.0F, zRotation = 90.0F)
-                initialScale = Scale(xScale = 0.3F, yScale = 1.0F, zScale = 0.3F)
+                initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
                 initialTranslation = Translation(
-                    xTranslation = -2.25F,
-                    yTranslation = 1.0F - 0.00009F,
+                    xTranslation = -2.35F,
+                    yTranslation = 1.0F - wallOffset - 0.00009F,
                     zTranslation = 0.0F
                 )
             },
             Painting(context, R.drawable.painting_5).apply {
                 initialRotation = Rotation(xRotation = 0.0F, yRotation = 0.0F, zRotation = -90.0F)
-                initialScale = Scale(xScale = 0.3F, yScale = 1.0F, zScale = 0.3F)
+                initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
                 initialTranslation = Translation(
-                    xTranslation = 2.25F,
-                    yTranslation = 1.0F - 0.00009F,
+                    xTranslation = 2.35F,
+                    yTranslation = 1.0F - wallOffset - 0.00009F,
                     zTranslation = 0.0F
                 )
             },
