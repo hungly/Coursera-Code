@@ -11,7 +11,7 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.math.abs
 
-class Painting(context: Context?, @DrawableRes resourceId: Int) :
+class LightSphere(context: Context?, @DrawableRes resourceId: Int) :
     GLObject() {
 
 

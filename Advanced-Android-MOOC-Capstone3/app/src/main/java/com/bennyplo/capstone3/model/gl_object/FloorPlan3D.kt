@@ -4,6 +4,7 @@ import android.content.Context
 import android.opengl.GLES32
 import com.bennyplo.capstone3.MyRenderer.Companion.checkGlError
 import com.bennyplo.capstone3.R
+import com.bennyplo.capstone3.model.Constant
 import com.bennyplo.capstone3.model.GLObject
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -27,6 +28,20 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             put(EXTERIOR_WALLS_INDEXES)
             position(0)
         }
+    }
+
+    private val _exteriorWallsNormal: FloatArray by lazy {
+        calculateDefaultNormalMap(EXTERIOR_WALLS_VERTICES)
+    }
+
+    private val _exteriorWallsNormalBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(_exteriorWallsNormal.size * Float.SIZE_BYTES)
+            .apply {
+                order(ByteOrder.nativeOrder())
+            }.asFloatBuffer().apply {
+                put(_exteriorWallsNormal)
+                position(0)
+            }
     }
 
     private val _exteriorWallsTextureBuffer: FloatBuffer by lazy {
@@ -99,6 +114,20 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         }
     }
 
+    private val _floorWallsNormal: FloatArray by lazy {
+        calculateDefaultNormalMap(FLOOR_VERTICES)
+    }
+
+    private val _floorWallsNormalBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(_floorWallsNormal.size * Float.SIZE_BYTES)
+            .apply {
+                order(ByteOrder.nativeOrder())
+            }.asFloatBuffer().apply {
+                put(_floorWallsNormal)
+                position(0)
+            }
+    }
+
     private val _interiorWallVertexBuffer: FloatBuffer by lazy {
         // (# of coordinate values * 4 bytes per float)
         ByteBuffer.allocateDirect(_interiorWallsVertices.size * Float.SIZE_BYTES).apply {
@@ -125,14 +154,28 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         }
     }
 
+    private val _interiorWallsNormal: FloatArray by lazy {
+        calculateDefaultNormalMap(_interiorWallsVertices)
+    }
+
+    private val _interiorWallsNormalBuffer: FloatBuffer by lazy {
+        ByteBuffer.allocateDirect(_interiorWallsNormal.size * Float.SIZE_BYTES)
+            .apply {
+                order(ByteOrder.nativeOrder())
+            }.asFloatBuffer().apply {
+                put(_interiorWallsNormal)
+                position(0)
+            }
+    }
+
     private val _interiorWallsTextureBuffer: FloatBuffer by lazy {
         ByteBuffer.allocateDirect(_interiorWallsTextureCoordinateData.size * Float.SIZE_BYTES)
             .apply {
                 order(ByteOrder.nativeOrder())
             }.asFloatBuffer().apply {
-            put(_interiorWallsTextureCoordinateData)
-            position(0)
-        }
+                put(_interiorWallsTextureCoordinateData)
+                position(0)
+            }
     }
 
     private val _interiorWallsTextureCoordinateData: FloatArray by lazy {
@@ -148,59 +191,6 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             data.add(4.0F)
         }
         data.toFloatArray()
-    }
-
-    private val _mVPMatrixHandle: Int by lazy {
-        // Get handle to shape's transformation matrix
-        GLES32.glGetUniformLocation(program, "uMVPMatrix")
-    }
-
-    private val exteriorWallColors by lazy {
-        val numberOfVertices = EXTERIOR_WALLS_VERTICES.size / COORDINATES_PER_VERTEX
-        val colors = arrayListOf<Float>()
-        repeat((0 until numberOfVertices).count()) {
-            colors.add(0.4F)
-            colors.add(0.4F)
-            colors.add(0.4F)
-            colors.add(1.0F)
-        }
-        colors.toFloatArray()
-    }
-
-    private val exteriorWallsTextureImageHandler by lazy {
-        loadTextureFromResource(R.drawable.exterior_walls, context)
-    }
-
-    private val floorColors by lazy {
-        val numberOfVertices = FLOOR_VERTICES.size / COORDINATES_PER_VERTEX
-        val colors = arrayListOf<Float>()
-        repeat((0 until numberOfVertices).count()) {
-            colors.add(0.2F)
-            colors.add(0.2F)
-            colors.add(0.2F)
-            colors.add(1.0F)
-        }
-        colors.toFloatArray()
-    }
-
-    private val floorTextureImageHandler by lazy {
-        loadTextureFromResource(R.drawable.floor, context)
-    }
-
-    private val interiorWallColors by lazy {
-        val numberOfVertices = _interiorWallsVertices.size / COORDINATES_PER_VERTEX
-        val colors = arrayListOf<Float>()
-        repeat((0 until numberOfVertices).count()) {
-            colors.add(0.6F)
-            colors.add(0.6F)
-            colors.add(0.6F)
-            colors.add(1.0F)
-        }
-        colors.toFloatArray()
-    }
-
-    private val interiorWallsTextureImageHandler by lazy {
-        loadTextureFromResource(R.drawable.interior_walls, context)
     }
 
     private val _interiorWallsVertices by lazy {
@@ -528,20 +518,70 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         )
     }
 
+    private val exteriorWallColors by lazy {
+        val numberOfVertices = EXTERIOR_WALLS_VERTICES.size / COORDINATES_PER_VERTEX
+        val colors = arrayListOf<Float>()
+        repeat((0 until numberOfVertices).count()) {
+            colors.add(0.4F)
+            colors.add(0.4F)
+            colors.add(0.4F)
+            colors.add(1.0F)
+        }
+        colors.toFloatArray()
+    }
+
+    private val exteriorWallsTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.exterior_walls, context)
+    }
+
+    private val floorColors by lazy {
+        val numberOfVertices = FLOOR_VERTICES.size / COORDINATES_PER_VERTEX
+        val colors = arrayListOf<Float>()
+        repeat((0 until numberOfVertices).count()) {
+            colors.add(0.2F)
+            colors.add(0.2F)
+            colors.add(0.2F)
+            colors.add(1.0F)
+        }
+        colors.toFloatArray()
+    }
+
+    private val floorTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.floor, context)
+    }
+
+    private val interiorWallColors by lazy {
+        val numberOfVertices = _interiorWallsVertices.size / COORDINATES_PER_VERTEX
+        val colors = arrayListOf<Float>()
+        repeat((0 until numberOfVertices).count()) {
+            colors.add(0.6F)
+            colors.add(0.6F)
+            colors.add(0.6F)
+            colors.add(1.0F)
+        }
+        colors.toFloatArray()
+    }
+
+    private val interiorWallsTextureImageHandler by lazy {
+        loadTextureFromResource(R.drawable.interior_walls, context)
+    }
+
     override var textureRatio: Float = 0.0F
 
     override val textureImageHandler: Int? = null
 
-    override fun draw(mvpMatrix: FloatArray?) {
-        super.draw(mvpMatrix)
+    override fun draw(mvpMatrix: FloatArray?, mLightModelMatrix: FloatArray?) {
+        super.draw(mvpMatrix, mLightModelMatrix)
 
-        // Apply the projection and view transformation
-        GLES32.glUniformMatrix4fv(_mVPMatrixHandle, 1, false, mvpMatrix, 0)
-        checkGlError("glUniformMatrix4fv")
+        GLES32.glUniform3fv(attenuateHandle, 1, ATTENUATION, 0)
+        GLES32.glUniform3fv(ambientColorHandle, 1, AMBIENT_COLOR, 0)
+        GLES32.glUniform4fv(diffuseColorHandle, 1, DIFFUSE_COLOR, 0)
+        GLES32.glUniform3fv(diffuseLightLocationHandle, 1, DIFFUSE_LIGHT_LOCATION, 0)
 
         draw(
             vertexBuffer = _floorVertexBuffer,
             colorBuffer = _floorColorBuffer,
+            normalBuffer = _floorWallsNormalBuffer,
             indexBuffer = _floorIndexBuffer,
             indexSize = FLOOR_INDEXES.size,
             textureBuffer = _floorTextureBuffer,
@@ -551,6 +591,7 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         draw(
             vertexBuffer = _exteriorWallsVertexBuffer,
             colorBuffer = _exteriorWallsColorBuffer,
+            normalBuffer = _exteriorWallsNormalBuffer,
             indexBuffer = _exteriorWallsIndexBuffer,
             indexSize = EXTERIOR_WALLS_INDEXES.size,
             textureBuffer = _exteriorWallsTextureBuffer,
@@ -565,6 +606,7 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
         draw(
             vertexBuffer = _interiorWallVertexBuffer,
             colorBuffer = _interiorWallsColorBuffer,
+            normalBuffer = _interiorWallsNormalBuffer,
             indexBuffer = _interiorWallsIndexBuffer,
             indexSize = INTERIOR_WALLS_INDEXES_BASE.size,
             textureBuffer = _interiorWallsTextureBuffer,
@@ -576,6 +618,7 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
     private fun draw(
         vertexBuffer: FloatBuffer,
         colorBuffer: FloatBuffer,
+        normalBuffer: FloatBuffer,
         indexBuffer: IntBuffer,
         indexSize: Int,
         textureBuffer: FloatBuffer,
@@ -598,6 +641,14 @@ class FloorPlan3D(context: Context?, val doorWidth: Float, val wallThickness: Fl
             false,
             COLOR_STRIDE,
             colorBuffer
+        )
+        GLES32.glVertexAttribPointer(
+            normalHandle,
+            COORDINATES_PER_VERTEX,
+            GLES32.GL_FLOAT,
+            false,
+            VERTEX_STRIDE,
+            normalBuffer
         )
 
         // Set up texture

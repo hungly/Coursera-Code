@@ -14,6 +14,26 @@ abstract class GLObject {
         GLES32.glGetAttribLocation(program, "aVertexColor")
     }
 
+    internal val normalHandle: Int by lazy {
+        GLES32.glGetAttribLocation(program, "aVertexNormal")
+    }
+
+    internal val attenuateHandle: Int by lazy {
+        GLES32.glGetUniformLocation(program, "uAttenuation")
+    }
+
+    internal val ambientColorHandle: Int by lazy {
+        GLES32.glGetUniformLocation(program, "uAmbientColor")
+    }
+
+    internal val diffuseColorHandle: Int by lazy {
+        GLES32.glGetUniformLocation(program, "uDiffuseColor")
+    }
+
+    internal val diffuseLightLocationHandle: Int by lazy {
+        GLES32.glGetUniformLocation(program, "uDiffuseLightLocation")
+    }
+
     internal val positionHandle: Int by lazy {
         // Get handle to vertex shader's vPosition member
         GLES32.glGetAttribLocation(program, "aVertexPosition")
@@ -33,6 +53,16 @@ abstract class GLObject {
 
     internal val useTextureHandle: Int by lazy {
         GLES32.glGetUniformLocation(program, "uUseTexture")
+    }
+
+    private val mVPMatrixHandle: Int by lazy {
+        // Get handle to shape's transformation matrix
+        GLES32.glGetUniformLocation(program, "uMVPMatrix")
+    }
+
+    private val lightModelMatrixHandle: Int by lazy {
+        // Get handle to shape's transformation matrix
+        GLES32.glGetUniformLocation(program, "uMMatrix")
     }
 
     internal abstract val textureImageHandler: Int?
@@ -58,16 +88,35 @@ abstract class GLObject {
         GLES32.glEnableVertexAttribArray(colorHandle)
         // Enable a handle to the texture coordinates
         GLES32.glEnableVertexAttribArray(textureCoordinateHandle)
+        // Enable a handle to the normal
+        GLES32.glEnableVertexAttribArray(normalHandle)
         MyRenderer.checkGlError("glGetUniformLocation")
     }
 
-    open fun draw(mvpMatrix: FloatArray?) {
+    open fun draw(mvpMatrix: FloatArray?, mLightModelMatrix: FloatArray?) {
         GLES32.glUseProgram(program) // Add program to OpenGL environment
 
         GLES32.glDisable(GLES32.GL_BLEND)
         GLES32.glDisable(GLES32.GL_CULL_FACE)
 
         GLES32.glUniform1i(useTextureHandle, 0)
+
+        // Apply the projection and view transformation
+        GLES32.glUniformMatrix4fv(mVPMatrixHandle, 1, false, mvpMatrix, 0)
+
+        GLES32.glUniformMatrix4fv(lightModelMatrixHandle, 1, false, mLightModelMatrix, 0)
+
+        MyRenderer.checkGlError("glUniformMatrix4fv")
+    }
+
+    internal fun calculateDefaultNormalMap(verticesArray: FloatArray): FloatArray {
+        val normals = arrayListOf<Float>()
+        repeat(verticesArray.size / COORDINATES_PER_VERTEX) {
+            normals.add(0.0F)
+            normals.add(0.0F)
+            normals.add(1.0F)
+        }
+        return normals.toFloatArray()
     }
 
     internal fun loadTextureFromResource(resourceId: Int, context: Context?): Int {
@@ -114,11 +163,15 @@ abstract class GLObject {
                     "varying vec2 vTextureCoordinate;" +
                     "uniform bool uUseTexture;" +
                     "uniform sampler2D uTextureSampler;" +
+                    "varying float vDiffuseLightWeighting;" +
+                    "varying vec4 vDiffuseColor;" +
+                    "varying vec3 vLightWeighting;" +
                     "void main() {" +
+                    "   vec4 diffuseColor = vDiffuseLightWeighting * vDiffuseColor;" +
                     "   if (uUseTexture) {" +
                     "       vec4 fragmentColor = texture2D(uTextureSampler, vec2(vTextureCoordinate.x, vTextureCoordinate.y));" +
                     "       if (fragmentColor.a < 0.1) discard;" +
-                    "       gl_FragColor = fragmentColor;" +
+                    "       gl_FragColor = vec4(fragmentColor.rgb * vLightWeighting, fragmentColor.a) + diffuseColor;" +
                     "   } else {" +
                     "       gl_FragColor = vColor;" +
                     "   };" +
@@ -127,15 +180,37 @@ abstract class GLObject {
         internal const val VERTEX_SHADER_CODE =
             "attribute vec3 aVertexPosition;" +
                     "uniform mat4 uMVPMatrix;" +
+                    "uniform mat4 uMMatrix;" +
                     "varying vec4 vColor;" +
                     "attribute vec4 aVertexColor;" +  // The colour  of the object
                     "attribute vec2 aTextureCoordinate;" +
                     "varying vec2 vTextureCoordinate;" +
+                    "attribute vec3 aVertexNormal;" +
+                    // Diffuse light properties
+                    "uniform vec3 uDiffuseLightLocation;" +
+                    "uniform vec4 uDiffuseColor;" +
+                    "varying vec4 vDiffuseColor;" +
+                    "varying float vDiffuseLightWeighting;" +
+                    // Light attenuation
+                    "uniform vec3 uAttenuation;" +
+                    "varying vec3 vLightWeighting;" +
+                    "uniform vec3 uAmbientColor;" +
                     "void main() {" +
+                    "   vec4 mPosition = uMMatrix * vec4(aVertexPosition, 1.0);" +
+                    "   vec3 diffuseLightDirection = normalize(uDiffuseLightLocation - mPosition.xyz);" +
+                    "   vec3 vertexToLightSource = mPosition.xyz - uDiffuseLightLocation;" +
+                    "   float diffLightDist = length(vertexToLightSource);" +
+                    "   vec3 transformedNormal = normalize((uMMatrix * vec4(aVertexNormal, 0.0)).xyz);" +
+                    "   float attenuation = 1.0 / (uAttenuation.x" +
+                    "                           + uAttenuation.y * diffLightDist" +
+                    "                           + uAttenuation.z * diffLightDist * diffLightDist);" +
+                    "   vDiffuseLightWeighting = attenuation * max(dot(transformedNormal, diffuseLightDirection), 0.0);" +
                     "   gl_Position = uMVPMatrix * vec4(aVertexPosition, 1.0);" +
                     "   gl_PointSize = 40.0;" +
                     "   vColor = aVertexColor;" +
                     "   vTextureCoordinate = aTextureCoordinate;" +
+                    "   vDiffuseColor = uDiffuseColor;" +
+                    "   vLightWeighting = uAmbientColor;" +
                     "}" // Get the colour from the application program
 
         // Number of coordinates per vertex in this array
@@ -148,6 +223,22 @@ abstract class GLObject {
             TEXTURE_COORDINATES_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per texture coordinate
         internal const val VERTEX_STRIDE =
             COORDINATES_PER_VERTEX * Float.SIZE_BYTES // 4 bytes per vertex
+
+        internal val ATTENUATION = floatArrayOf(
+            1.0F, 0.14F, 0.07F
+        )
+
+        internal val AMBIENT_COLOR = floatArrayOf(
+            0.3F, 0.3F, 0.3F
+        )
+
+        internal val DIFFUSE_COLOR = floatArrayOf(
+            0.3F, 0.3F, 0.3F, 1.0F
+        )
+
+        internal  val DIFFUSE_LIGHT_LOCATION = floatArrayOf(
+            0.0F, 0.0F, -3.0F
+        )
     }
 
 }

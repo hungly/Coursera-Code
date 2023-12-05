@@ -9,6 +9,7 @@ import com.bennyplo.capstone3.model.Rotation
 import com.bennyplo.capstone3.model.Scale
 import com.bennyplo.capstone3.model.Translation
 import com.bennyplo.capstone3.model.gl_object.FloorPlan3D
+import com.bennyplo.capstone3.model.gl_object.LightSphere
 import com.bennyplo.capstone3.model.gl_object.Painting
 import timber.log.Timber
 import javax.microedition.khronos.egl.EGLConfig
@@ -37,6 +38,22 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
 
     private val modelMatrix by lazy {
         FloatArray(MATRIX_SIZE) // Model  matrix
+    }
+
+    private val mLightModelMatrix by lazy {
+        FloatArray(MATRIX_SIZE) // Diffuse light model  matrix
+    }
+
+    private val temp: LightSphere by lazy {
+        LightSphere(context, R.drawable.painting_1).apply {
+            initialRotation = Rotation(xRotation = -90.0F, yRotation = 0.0F, zRotation = 0.0F)
+            initialScale = Scale(xScale = 0.2F, yScale = 1.0F, zScale = 0.2F)
+            initialTranslation = Translation(
+                xTranslation = 0.0F,
+                yTranslation = -1.0F,
+                zTranslation = 0.0F
+            )
+        }
     }
 
     private val objects by lazy {
@@ -87,6 +104,7 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
                     zTranslation = 0.0F
                 )
             },
+            temp
         )
     }
 
@@ -105,6 +123,21 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
         GLES32.glEnable(GLES32.GL_DEPTH_TEST) // Enable depth test (so, it will not look through the surfaces)
         GLES32.glDepthFunc(GLES32.GL_LEQUAL) // Indicate what type of depth test
 
+        // Set the camera position (View matrix)
+        Matrix.setLookAtM(
+            viewMatrix,
+            0,
+            0.0F,
+            0.0F,
+            1.0F,  //camera is at (0,0,1)
+            0.0F,
+            0.0F,
+            0.0F,  //looks at the origin
+            0.0F,
+            1.0F,
+            0.0F
+        ) // Head is down (set to (0,1,0) to look from the top)
+
         objects.forEach {
             // Reset matrices
             Matrix.setIdentityM(
@@ -113,23 +146,10 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
             ) // Set the model view projection matrix to an identity matrix
             Matrix.setIdentityM(mVMatrix, 0) // Set the model view  matrix to an identity matrix
             Matrix.setIdentityM(modelMatrix, 0) // Set the model matrix to an identity matrix
-
-            // Set the camera position (View matrix)
-            Matrix.setLookAtM(
-                viewMatrix,
-                0,
-                0.0F,
-                0.0F,
-                1.0F,  //camera is at (0,0,1)
-                0.0F,
-                0.0F,
-                0.0F,  //looks at the origin
-                0.0F,
-                1.0F,
-                0.0F
-            ) // Head is down (set to (0,1,0) to look from the top)
+            Matrix.setIdentityM(mLightModelMatrix, 0) // Set the model matrix to an identity matrix
 
             Matrix.translateM(modelMatrix, 0, 0.0F, 0.0F, -5.0F) // Move backward for 5 units
+            Matrix.translateM(mLightModelMatrix, 0, 0.0F, 0.0F, -5.0F) // Move backward for 5 units
 
             Matrix.setRotateM(
                 _rotationMatrixX,
@@ -159,8 +179,20 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, _rotationMatrixX, 0)
             Matrix.multiplyMM(modelMatrix, 0, modelMatrix, 0, _rotationMatrixZ, 0)
 
+//            Matrix.multiplyMM(mLightModelMatrix, 0, mLightModelMatrix, 0, _rotationMatrixY, 0)
+//            Matrix.multiplyMM(mLightModelMatrix, 0, mLightModelMatrix, 0, _rotationMatrixX, 0)
+//            Matrix.multiplyMM(mLightModelMatrix, 0, mLightModelMatrix, 0, _rotationMatrixZ, 0)
+
             Matrix.translateM(
                 modelMatrix,
+                0,
+                it.initialTranslation.xTranslation,
+                it.initialTranslation.yTranslation,
+                it.initialTranslation.zTranslation
+            )
+
+            Matrix.translateM(
+                mLightModelMatrix,
                 0,
                 it.initialTranslation.xTranslation,
                 it.initialTranslation.yTranslation,
@@ -175,12 +207,24 @@ class MyRenderer(context: Context?) : GLSurfaceView.Renderer {
                 it.initialScale.zScale
             )
 
+            Matrix.scaleM(
+                mLightModelMatrix,
+                0,
+                it.initialScale.xScale,
+                it.initialScale.yScale,
+                it.initialScale.zScale
+            )
+
             // Calculate the projection and view transformation
             // Calculate the model view matrix
-            Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+            if (it is LightSphere) {
+                Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, mLightModelMatrix, 0)
+            } else {
+                Matrix.multiplyMM(mVMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+            }
             Matrix.multiplyMM(mVPMatrix, 0, projectionMatrix, 0, mVMatrix, 0)
 
-            it.draw(mVPMatrix)
+            it.draw(mVPMatrix, mLightModelMatrix)
         }
     }
 
